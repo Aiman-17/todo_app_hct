@@ -299,3 +299,10 @@ Documentation must be:
 - Explicit
 
 Assume evaluators will review commit history and spec quality.
+
+## Active Technologies
+- Python 3.13+ (backend), TypeScript 5+ with strict mode (frontend) + FastAPI, Uvicorn, SQLModel, Better Auth (backend); Next.js 16+, React 19+, shadcn/ui, Better Auth (frontend) (002-fullstack-web-auth)
+- Neon Serverless PostgreSQL with connection pooling (002-fullstack-web-auth)
+
+## Recent Changes
+- 002-fullstack-web-auth: Added Python 3.13+ (backend), TypeScript 5+ with strict mode (frontend) + FastAPI, Uvicorn, SQLModel, Better Auth (backend); Next.js 16+, React 19+, shadcn/ui, Better Auth (frontend)

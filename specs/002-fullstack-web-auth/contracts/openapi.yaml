@@ -1,0 +1,541 @@
+openapi: 3.0.3
+info:
+  title: Todo Application API
+  description: |
+    RESTful API for Phase II Todo Application with JWT authentication.
+
+    **Authentication**: All protected endpoints require a valid JWT access token in the Authorization header.
+
+    **User Isolation**: All task operations are filtered by the authenticated user's ID.
+  version: 1.0.0
+  contact:
+    name: Todo App Support
+    email: support@todoapp.example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.todoapp.example.com
+    description: Production server (Phase V)
+
+tags:
+  - name: auth
+    description: Authentication and user management
+  - name: tasks
+    description: Task CRUD operations
+  - name: health
+    description: Health check endpoints
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      description: Returns API health status (no authentication required)
+      tags:
+        - health
+      security: []  # Public endpoint
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-12-30T10:00:00Z"
+
+  /api/auth/signup:
+    post:
+      summary: User registration
+      description: Create a new user account with email, name, and password
+      tags:
+        - auth
+      security: []  # Public endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid input (email format, password validation, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                weakPassword:
+                  value:
+                    detail: "Password must be at least 8 characters"
+                emailExists:
+                  value:
+                    detail: "Email already registered"
+
+  /api/auth/login:
+    post:
+      summary: User login
+      description: Authenticate user with email and password, returns access and refresh tokens
+      tags:
+        - auth
+      security: []  # Public endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Invalid credentials"
+
+  /api/auth/refresh:
+    post:
+      summary: Refresh access token
+      description: Use refresh token to obtain a new access token
+      tags:
+        - auth
+      security: []  # Uses refresh token, not access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              required:
+                - refresh_token
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  token_type:
+                    type: string
+                    example: "bearer"
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/logout:
+    post:
+      summary: User logout
+      description: Invalidate refresh token (access token expires naturally)
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              required:
+                - refresh_token
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/me:
+    get:
+      summary: Get current user
+      description: Returns authenticated user's profile information
+      tags:
+        - auth
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized (invalid or expired token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks:
+    get:
+      summary: List all tasks
+      description: Retrieve all tasks for the authenticated user, sorted by completion status and creation date
+      tags:
+        - tasks
+      responses:
+        '200':
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new task
+      description: Create a new task for the authenticated user
+      tags:
+        - tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid input (empty title, title too long, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyTitle:
+                  value:
+                    detail: "Title cannot be empty"
+                titleTooLong:
+                  value:
+                    detail: "Title too long (max 200 characters)"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks/{task_id}:
+    put:
+      summary: Update a task
+      description: Update title and/or description of an existing task (authorization check enforced)
+      tags:
+        - tasks
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the task to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found or access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Task not found"
+
+    delete:
+      summary: Delete a task
+      description: Permanently delete a task (authorization check enforced)
+      tags:
+        - tasks
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the task to delete
+      responses:
+        '200':
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Task deleted successfully"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found or access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks/{task_id}/toggle:
+    patch:
+      summary: Toggle task completion
+      description: Toggle task between completed and incomplete status (authorization check enforced)
+      tags:
+        - tasks
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the task to toggle
+      responses:
+        '200':
+          description: Task toggled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found or access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /api/auth/login (15 minute expiration)
+
+  schemas:
+    UserCreate:
+      type: object
+      required:
+        - email
+        - name
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "alice@example.com"
+          description: User email address (must be unique)
+        name:
+          type: string
+          maxLength: 255
+          example: "Alice Smith"
+          description: User display name
+        password:
+          type: string
+          minLength: 8
+          example: "SecurePass123"
+          description: Password (min 8 chars, 1 uppercase, 1 lowercase, 1 number)
+
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "alice@example.com"
+        password:
+          type: string
+          example: "SecurePass123"
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        email:
+          type: string
+          format: email
+          example: "alice@example.com"
+        name:
+          type: string
+          example: "Alice Smith"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-12-30T10:00:00Z"
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          description: JWT access token (15 minute expiration)
+        refresh_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          description: JWT refresh token (7 day expiration)
+        token_type:
+          type: string
+          example: "bearer"
+        expires_in:
+          type: integer
+          example: 900
+          description: Access token expiration in seconds (900 = 15 minutes)
+
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          example: "Buy groceries"
+          description: Task title (max 200 characters)
+        description:
+          type: string
+          maxLength: 2000
+          example: "Milk, eggs, bread"
+          description: Optional task description (max 2000 characters)
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          example: "Buy groceries and snacks"
+          description: Updated task title (max 200 characters)
+        description:
+          type: string
+          maxLength: 2000
+          example: "Milk, eggs, bread, chips"
+          description: Updated task description (max 2000 characters)
+
+    TaskResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Task ID
+        title:
+          type: string
+          example: "Buy groceries"
+          description: Task title
+        description:
+          type: string
+          example: "Milk, eggs, bread"
+          description: Task description
+        completed:
+          type: boolean
+          example: false
+          description: Completion status
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-12-30T10:05:00Z"
+          description: Task creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-12-30T10:05:00Z"
+          description: Last modification timestamp
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Invalid credentials"
+          description: Error message
