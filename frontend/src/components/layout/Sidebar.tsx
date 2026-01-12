@@ -32,7 +32,7 @@ export function Sidebar() {
 
   const handleLogout = () => {
     clearTokens();
-    router.push("/login");
+    router.push("/");
   };
 
   const navItems: NavItem[] = [

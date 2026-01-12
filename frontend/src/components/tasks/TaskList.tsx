@@ -122,7 +122,7 @@ export function TaskList() {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
 
-      await apiRequest(`/api/tasks/${taskId}/toggle`, { method: "POST" });
+      await apiRequest(`/api/tasks/${taskId}/toggle`, { method: "PATCH" });
 
       // Update local state
       setTasks((prev) =>
