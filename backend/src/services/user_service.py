@@ -93,3 +93,62 @@ def get_user_by_id(db: Session, user_id: UUID) -> Optional[User]:
     statement = select(User).where(User.id == user_id)
     user = db.exec(statement).first()
     return user
+
+
+def update_user_name(db: Session, user_id: UUID, name: str) -> Optional[User]:
+    """
+    Update user's display name.
+
+    Args:
+        db: Database session
+        user_id: UUID of the user to update
+        name: New display name
+
+    Returns:
+        Updated User if found, None otherwise
+
+    Example:
+        >>> user = update_user_name(db, user_id, "Alice Johnson")
+        >>> if user:
+        ...     print(user.name)  # "Alice Johnson"
+    """
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return None
+
+    user.name = name
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def update_user_password(db: Session, user_id: UUID, new_password: str) -> Optional[User]:
+    """
+    Update user's password with bcrypt hashing.
+
+    Args:
+        db: Database session
+        user_id: UUID of the user to update
+        new_password: New plaintext password (will be hashed)
+
+    Returns:
+        Updated User if found, None otherwise
+
+    Example:
+        >>> user = update_user_password(db, user_id, "NewSecurePass456")
+        >>> if user:
+        ...     # Password is now hashed with bcrypt
+    """
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return None
+
+    # Hash new password with bcrypt
+    password_hash = hash_password(new_password)
+    user.password_hash = password_hash
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user

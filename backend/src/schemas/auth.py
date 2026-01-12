@@ -141,3 +141,66 @@ class TokenResponse(BaseModel):
             }
         }
     )
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating user profile (name only)."""
+
+    name: str
+
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate name is non-empty and within length limits."""
+        v = v.strip()
+        if not v:
+            raise ValueError("Name cannot be empty")
+        if len(v) > 255:
+            raise ValueError("Name too long (max 255 characters)")
+        return v
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Alice Johnson"
+            }
+        }
+    )
+
+
+class PasswordChange(BaseModel):
+    """Schema for password change request."""
+
+    current_password: str
+    new_password: str
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        """
+        Validate password meets security requirements.
+
+        Requirements:
+            - Minimum 8 characters
+            - At least one uppercase letter (A-Z)
+            - At least one lowercase letter (a-z)
+            - At least one number (0-9)
+        """
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not re.search(r'[A-Z]', v):
+            raise ValueError("Password must include an uppercase letter")
+        if not re.search(r'[a-z]', v):
+            raise ValueError("Password must include a lowercase letter")
+        if not re.search(r'[0-9]', v):
+            raise ValueError("Password must include a number")
+        return v
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "current_password": "OldPass123",
+                "new_password": "NewSecurePass456"
+            }
+        }
+    )

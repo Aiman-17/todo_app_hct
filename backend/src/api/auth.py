@@ -15,8 +15,8 @@ from sqlalchemy.exc import IntegrityError
 
 from src.dependencies import get_db_session, get_current_user
 from src.models.user import User
-from src.schemas.auth import UserCreate, UserLogin, RefreshTokenRequest, UserResponse, TokenResponse
-from src.services.user_service import create_user, get_user_by_email, get_user_by_id
+from src.schemas.auth import UserCreate, UserLogin, RefreshTokenRequest, UserResponse, TokenResponse, UserUpdate, PasswordChange
+from src.services.user_service import create_user, get_user_by_email, get_user_by_id, update_user_name, update_user_password
 from src.services.auth_service import verify_password, create_access_token, create_refresh_token, verify_token
 
 logger = logging.getLogger(__name__)
@@ -322,3 +322,124 @@ async def get_profile(
     """
     logger.info(f"Profile accessed by user: {current_user.email}")
     return UserResponse.model_validate(current_user)
+
+
+@router.put(
+    "/profile",
+    response_model=UserResponse,
+    summary="Update authenticated user's profile",
+    response_description="Updated user profile"
+)
+async def update_profile(
+    user_data: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Update authenticated user's profile (name only).
+
+    Requires valid JWT access token in Authorization header.
+    Email cannot be changed for security reasons.
+
+    Args:
+        user_data: UserUpdate schema with name
+        current_user: Authenticated user (injected dependency)
+        db: Database session (injected dependency)
+
+    Returns:
+        UserResponse with updated profile
+
+    Raises:
+        401 Unauthorized: If token is missing, invalid, or expired
+
+    Example Request:
+        PUT /api/auth/profile
+        Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        {
+            "name": "Alice Johnson"
+        }
+
+    Example Response:
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "email": "alice@example.com",
+            "name": "Alice Johnson",
+            "created_at": "2025-12-30T10:00:00Z"
+        }
+    """
+    updated_user = update_user_name(db, current_user.id, user_data.name)
+
+    if not updated_user:
+        logger.error(f"Failed to update profile for user: {current_user.email}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update profile"
+        )
+
+    logger.info(f"Profile updated for user: {current_user.email}")
+    return UserResponse.model_validate(updated_user)
+
+
+@router.post(
+    "/change-password",
+    status_code=status.HTTP_200_OK,
+    summary="Change authenticated user's password",
+    response_description="Password changed successfully"
+)
+async def change_password(
+    password_data: PasswordChange,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Change authenticated user's password.
+
+    Requires valid JWT access token and current password verification.
+    New password must meet security requirements (8+ chars, uppercase, lowercase, number).
+
+    Args:
+        password_data: PasswordChange schema with current and new passwords
+        current_user: Authenticated user (injected dependency)
+        db: Database session (injected dependency)
+
+    Returns:
+        Success message
+
+    Raises:
+        401 Unauthorized: If token is missing, invalid, or expired
+        400 Bad Request: If current password is incorrect
+        422 Validation Error: If new password doesn't meet requirements
+
+    Example Request:
+        POST /api/auth/change-password
+        Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        {
+            "current_password": "OldPass123",
+            "new_password": "NewSecurePass456"
+        }
+
+    Example Response:
+        {
+            "message": "Password changed successfully"
+        }
+    """
+    # Verify current password
+    if not verify_password(password_data.current_password, current_user.password_hash):
+        logger.warning(f"Incorrect current password for user: {current_user.email}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+
+    # Update password
+    updated_user = update_user_password(db, current_user.id, password_data.new_password)
+
+    if not updated_user:
+        logger.error(f"Failed to change password for user: {current_user.email}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to change password"
+        )
+
+    logger.info(f"Password changed successfully for user: {current_user.email}")
+    return {"message": "Password changed successfully"}
