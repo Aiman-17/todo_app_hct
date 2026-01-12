@@ -8,7 +8,7 @@
  */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ColorfulTaskCard } from "./ColorfulTaskCard";
 import { TaskForm } from "./TaskForm";
 import { SkeletonTaskList } from "@/components/shared/SkeletonTaskCard";
@@ -31,8 +31,9 @@ export function TaskList() {
    * Fetch tasks with current filters from the API.
    *
    * Builds query parameters from FilterContext and fetches filtered tasks.
+   * Memoized with useCallback to prevent infinite re-render loops.
    */
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       // Build query parameters from filters
       const params = new URLSearchParams();
@@ -80,13 +81,13 @@ export function TaskList() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters.priority, filters.status, filters.sortBy, filters.order, filters.search, toast]);
 
   // Refetch when filters change
   useEffect(() => {
     setIsLoading(true);
     fetchTasks();
-  }, [filters]);
+  }, [fetchTasks]);
 
   // Listen for task creation/update events
   useEffect(() => {
@@ -102,7 +103,7 @@ export function TaskList() {
       window.removeEventListener("taskCreated", handleTaskCreated);
       window.removeEventListener("taskUpdated", handleTaskCreated);
     };
-  }, [filters]);
+  }, [fetchTasks]);
 
   /**
    * Handle task deletion by removing it from local state.
