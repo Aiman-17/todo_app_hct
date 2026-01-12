@@ -54,32 +54,65 @@ export function PomodoroTimer({ onComplete, taskName }: PomodoroTimerProps) {
   };
 
   // Timer logic
-  useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            setIsCompleted(true);
-            onComplete?.();
-            // Play notification sound (optional)
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    }
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+  useEffect(() => {
+  if (!isRunning) {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    return;
+  }
+
+  intervalRef.current = setInterval(() => {
+    setTimeLeft((prev) => {
+      if (prev <= 1) {
+        clearInterval(intervalRef.current!);
+        intervalRef.current = null;
+        setIsRunning(false);
+        setIsCompleted(true);
+        onComplete?.();
+        return 0;
       }
-    };
-  }, [isRunning, timeLeft, onComplete]);
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+}, [isRunning, onComplete]);
+
+
+  // useEffect(() => {
+  //   if (isRunning && timeLeft > 0) {
+  //     intervalRef.current = setInterval(() => {
+  //       setTimeLeft((prev) => {
+  //         if (prev <= 1) {
+  //           setIsRunning(false);
+  //           setIsCompleted(true);
+  //           onComplete?.();
+  //           // Play notification sound (optional)
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+  //   } else {
+  //     if (intervalRef.current) {
+  //       clearInterval(intervalRef.current);
+  //     }
+  //   }
+
+  //   return () => {
+  //     if (intervalRef.current) {
+  //       clearInterval(intervalRef.current);
+  //     }
+  //   };
+  // }, [isRunning, timeLeft, onComplete]);
 
   const handleStart = () => {
     setIsRunning(true);
