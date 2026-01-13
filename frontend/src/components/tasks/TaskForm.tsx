@@ -65,11 +65,15 @@ export function TaskForm({ trigger, open: controlledOpen, onOpenChange, task }: 
   const setIsOpen = onOpenChange || setInternalOpen;
 
   /**
-   * Load draft from localStorage when component mounts.
+   * Load draft from localStorage when component mounts (only in create mode).
    *
    * Restores any unsaved work from a previous session to prevent data loss.
+   * Drafts are NOT loaded in edit mode to avoid overwriting existing task data.
    */
   useEffect(() => {
+    // Only load drafts in create mode, not edit mode
+    if (isEditMode) return;
+
     try {
       const savedDraft = localStorage.getItem(DRAFT_KEY);
       if (savedDraft) {
@@ -82,15 +86,19 @@ export function TaskForm({ trigger, open: controlledOpen, onOpenChange, task }: 
       // Ignore localStorage errors (e.g., quota exceeded, disabled)
       console.error("Failed to load draft:", error);
     }
-  }, []);
+  }, [isEditMode]);
 
   /**
-   * Save draft to localStorage whenever title or description changes.
+   * Save draft to localStorage whenever title or description changes (only in create mode).
    *
    * Prevents work loss due to session expiration or accidental browser closure.
    * Draft is automatically cleared after successful task creation.
+   * Drafts are NOT saved in edit mode.
    */
   useEffect(() => {
+    // Only save drafts in create mode, not edit mode
+    if (isEditMode) return;
+
     if (title || description) {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, description }));
@@ -103,7 +111,7 @@ export function TaskForm({ trigger, open: controlledOpen, onOpenChange, task }: 
         console.error("Failed to save draft:", error);
       }
     }
-  }, [title, description]);
+  }, [title, description, isEditMode]);
 
   /**
    * Auto-focus title input when dialog opens.
