@@ -190,6 +190,35 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+@app.get("/", tags=["health"])
+async def root():
+    """
+    Root endpoint for platform health checks and API info.
+
+    Provides API status and navigation links for Hugging Face Spaces
+    container health checks and developer discovery.
+
+    Returns:
+        dict: Service status with navigation metadata
+
+    Example response:
+        {
+            "status": "healthy",
+            "service": "Todo Application API",
+            "version": "1.0.0",
+            "docs": "/docs",
+            "health": "/api/health"
+        }
+    """
+    return {
+        "status": "healthy",
+        "service": "Todo Application API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/api/health"
+    }
+
+
 @app.get("/api/health", tags=["health"])
 async def health_check():
     """
