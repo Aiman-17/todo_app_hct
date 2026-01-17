@@ -115,6 +115,14 @@ Common HTTP status codes:
             "name": "tasks",
             "description": "Task management endpoints for creating, reading, updating, and deleting tasks",
         },
+        {
+            "name": "chat",
+            "description": "Phase III: AI chatbot endpoint for natural language task management",
+        },
+        {
+            "name": "conversations",
+            "description": "Phase III: Conversation history management endpoints",
+        },
     ],
 )
 
@@ -245,5 +253,13 @@ async def health_check():
 from src.api.auth import router as auth_router
 from src.api.tasks import router as tasks_router
 
+# Phase III: AI Chatbot routers
+from src.routes.chat import router as chat_router
+from src.routes.conversations import router as conversations_router
+
 app.include_router(auth_router)
 app.include_router(tasks_router)
+
+# Phase III: Register chat endpoints
+app.include_router(chat_router)
+app.include_router(conversations_router)

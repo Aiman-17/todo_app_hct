@@ -23,6 +23,10 @@ class Settings:
     # CORS
     CORS_ORIGINS_STR: str = os.getenv("CORS_ORIGINS", "http://localhost:3000")
 
+    # Phase III: AI Chatbot
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    MCP_TOOLS_LOG_LEVEL: str = os.getenv("MCP_TOOLS_LOG_LEVEL", "INFO")
+
     @property
     def CORS_ORIGINS(self) -> List[str]:
         """Parse CORS_ORIGINS from comma-separated string to list."""

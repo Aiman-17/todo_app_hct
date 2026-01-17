@@ -18,6 +18,8 @@ load_dotenv()
 from sqlmodel import SQLModel
 from src.models.user import User
 from src.models.task import Task
+# Phase III: AI Chatbot models
+from src.models.conversation import Conversation, Message
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

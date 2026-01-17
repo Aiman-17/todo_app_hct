@@ -1,0 +1,554 @@
+# MCP Tools Specification: Phase III AI Chatbot
+
+**Version**: 1.0.0
+**Protocol**: Model Context Protocol (MCP)
+**Purpose**: Interface between AI agents and task database operations
+
+## Overview
+
+MCP (Model Context Protocol) tools provide a standardized interface for AI agents to perform task operations without direct database access. This ensures:
+- **User isolation**: All tools require and enforce `user_id` parameter
+- **Security boundary**: Agents cannot bypass user filtering
+- **Audit trail**: All tool calls are logged for compliance
+- **Idempotency**: Safe to retry operations
+
+## Tool Catalog
+
+### 1. add_task
+
+**Purpose**: Create a new task for the authenticated user
+
+**Input Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "User ID extracted from JWT token"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Task title"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 5000,
+      "description": "Optional task description"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional due date (ISO 8601 format)"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "default": "medium",
+      "description": "Task priority"
+    }
+  },
+  "required": ["user_id", "title"]
+}
+```
+
+**Output Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Operation success status"
+    },
+    "task_id": {
+      "type": "integer",
+      "description": "ID of created task"
+    },
+    "task": {
+      "type": "object",
+      "description": "Full task object",
+      "properties": {
+        "id": {"type": "integer"},
+        "user_id": {"type": "string"},
+        "title": {"type": "string"},
+        "description": {"type": "string"},
+        "completed": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message (if success is false)"
+    }
+  },
+  "required": ["success"]
+}
+```
+
+**Example Call**:
+```json
+{
+  "tool": "add_task",
+  "parameters": {
+    "user_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "title": "Buy groceries",
+    "description": "Milk, eggs, bread",
+    "priority": "high"
+  }
+}
+```
+
+**Example Response (Success)**:
+```json
+{
+  "success": true,
+  "task_id": 42,
+  "task": {
+    "id": 42,
+    "user_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "title": "Buy groceries",
+    "description": "Milk, eggs, bread",
+    "completed": false,
+    "created_at": "2026-01-13T10:30:00Z",
+    "updated_at": "2026-01-13T10:30:00Z"
+  }
+}
+```
+
+**Example Response (Error)**:
+```json
+{
+  "success": false,
+  "error": "Title cannot be empty"
+}
+```
+
+**Validation Rules**:
+- `user_id` must be valid UUID
+- `title` cannot be empty or only whitespace
+- `description` is optional (defaults to empty string)
+- `priority` defaults to "medium" if not specified
+
+**Error Conditions**:
+- Empty title → `error: "Title cannot be empty"`
+- Invalid user_id → `error: "Invalid user ID"`
+- Database error → `error: "Database operation failed"`
+
+---
+
+### 2. list_tasks
+
+**Purpose**: Retrieve tasks for the authenticated user
+
+**Input Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "User ID extracted from JWT token"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["all", "pending", "completed"],
+      "default": "all",
+      "description": "Filter tasks by completion status"
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 50,
+      "description": "Maximum number of tasks to return"
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Number of tasks to skip (pagination)"
+    }
+  },
+  "required": ["user_id"]
+}
+```
+
+**Output Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "completed": {"type": "boolean"},
+          "created_at": {"type": "string"},
+          "updated_at": {"type": "string"}
+        }
+      }
+    },
+    "total": {
+      "type": "integer",
+      "description": "Total tasks matching filter"
+    },
+    "error": {
+      "type": "string"
+    }
+  },
+  "required": ["success"]
+}
+```
+
+**Example Call**:
+```json
+{
+  "tool": "list_tasks",
+  "parameters": {
+    "user_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "status": "pending",
+    "limit": 10
+  }
+}
+```
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "tasks": [
+    {
+      "id": 42,
+      "title": "Buy groceries",
+      "description": "Milk, eggs, bread",
+      "completed": false,
+      "created_at": "2026-01-13T10:30:00Z",
+      "updated_at": "2026-01-13T10:30:00Z"
+    },
+    {
+      "id": 43,
+      "title": "Call dentist",
+      "description": "",
+      "completed": false,
+      "created_at": "2026-01-13T09:15:00Z",
+      "updated_at": "2026-01-13T09:15:00Z"
+    }
+  ],
+  "total": 2
+}
+```
+
+**Filtering Behavior**:
+- `status: "all"` → Returns all tasks (completed and pending)
+- `status: "pending"` → Returns only incomplete tasks
+- `status: "completed"` → Returns only completed tasks
+
+---
+
+### 3. complete_task
+
+**Purpose**: Mark a task as completed (or uncompleted)
+
+**Input Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "User ID extracted from JWT token"
+    },
+    "task_id": {
+      "type": "integer",
+      "description": "ID of the task to update"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": true,
+      "description": "Set completion status (true = completed, false = uncompleted)"
+    }
+  },
+  "required": ["user_id", "task_id"]
+}
+```
+
+**Output Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {"type": "boolean"},
+    "task_id": {"type": "integer"},
+    "task": {
+      "type": "object",
+      "description": "Updated task object"
+    },
+    "error": {"type": "string"}
+  },
+  "required": ["success"]
+}
+```
+
+**Example Call**:
+```json
+{
+  "tool": "complete_task",
+  "parameters": {
+    "user_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "task_id": 42,
+    "completed": true
+  }
+}
+```
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "task_id": 42,
+  "task": {
+    "id": 42,
+    "title": "Buy groceries",
+    "completed": true,
+    "updated_at": "2026-01-13T10:35:00Z"
+  }
+}
+```
+
+**Idempotency**:
+- Marking completed task as completed → Success (no-op)
+- Marking pending task as pending → Success (no-op)
+
+**Error Conditions**:
+- Task not found → `error: "Task not found"`
+- Task belongs to different user → `error: "Task not found"` (security: no info leak)
+
+---
+
+### 4. delete_task
+
+**Purpose**: Soft-delete a task (sets deleted_at timestamp)
+
+**Input Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "task_id": {
+      "type": "integer"
+    }
+  },
+  "required": ["user_id", "task_id"]
+}
+```
+
+**Output Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {"type": "boolean"},
+    "task_id": {"type": "integer"},
+    "error": {"type": "string"}
+  },
+  "required": ["success"]
+}
+```
+
+**Example Call**:
+```json
+{
+  "tool": "delete_task",
+  "parameters": {
+    "user_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "task_id": 43
+  }
+}
+```
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "task_id": 43
+}
+```
+
+**Implementation Notes**:
+- Soft delete: Sets `deleted_at` timestamp, doesn't physically remove row
+- Future queries filter out deleted tasks automatically
+- Idempotent: Deleting already-deleted task returns success
+
+---
+
+### 5. update_task
+
+**Purpose**: Update task title and/or description
+
+**Input Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "task_id": {
+      "type": "integer"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "New task title (optional)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 5000,
+      "description": "New task description (optional)"
+    }
+  },
+  "required": ["user_id", "task_id"],
+  "minProperties": 3
+}
+```
+
+**Output Schema**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "success": {"type": "boolean"},
+    "task_id": {"type": "integer"},
+    "task": {
+      "type": "object",
+      "description": "Updated task object"
+    },
+    "error": {"type": "string"}
+  },
+  "required": ["success"]
+}
+```
+
+**Example Call**:
+```json
+{
+  "tool": "update_task",
+  "parameters": {
+    "user_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "task_id": 42,
+    "title": "Buy groceries and fruits",
+    "description": "Milk, eggs, bread, apples, oranges"
+  }
+}
+```
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "task_id": 42,
+  "task": {
+    "id": 42,
+    "title": "Buy groceries and fruits",
+    "description": "Milk, eggs, bread, apples, oranges",
+    "completed": false,
+    "updated_at": "2026-01-13T10:40:00Z"
+  }
+}
+```
+
+**Validation Rules**:
+- At least one of `title` or `description` must be provided
+- Empty title not allowed (if title is provided)
+- Partial updates supported (can update just title or just description)
+
+---
+
+## Security & Isolation
+
+### User Filtering
+All tools enforce user isolation:
+```python
+# Pseudo-code
+def list_tasks(user_id, **kwargs):
+    tasks = db.query(Task).filter(
+        Task.user_id == user_id,
+        Task.deleted_at == None
+    ).all()
+    return tasks
+```
+
+### JWT Extraction
+```python
+# Extract user_id from JWT in API layer
+user_id = extract_user_id_from_jwt(request.headers['Authorization'])
+
+# Pass to MCP tool
+result = mcp_tool('list_tasks', user_id=user_id)
+```
+
+### Error Handling
+- **Never expose internal details**: Return generic errors to users
+- **Log detailed errors**: Log stack traces server-side for debugging
+- **No user enumeration**: Same error for "task not found" vs "task belongs to different user"
+
+---
+
+## Logging & Audit Trail
+
+Every MCP tool call must log:
+```json
+{
+  "timestamp": "2026-01-13T10:30:00Z",
+  "user_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
+  "tool": "add_task",
+  "parameters": {
+    "title": "Buy groceries"
+  },
+  "result": {
+    "success": true,
+    "task_id": 42
+  },
+  "latency_ms": 87
+}
+```
+
+**Log Storage**: `backend/logs/mcp_tools.log` (append-only)
+
+---
+
+## Performance Targets
+
+- Tool call latency: <100ms p95
+- Database query time: <50ms p95
+- Maximum concurrent calls: 100 per user
+
+---
+
+## Future Extensions (Phase IV+)
+
+- **Batch operations**: `batch_update_tasks([task_ids])`
+- **Search**: `search_tasks(query="groceries")`
+- **Categories/Tags**: `add_tag(task_id, tag_name)`
+- **Due date reminders**: Event-driven notifications via Kafka

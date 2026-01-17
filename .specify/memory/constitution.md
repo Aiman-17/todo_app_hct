@@ -75,6 +75,22 @@ You MUST deliver functionality incrementally through five defined phases. You MU
 
 **Rationale**: Phased delivery reduces risk, enables early validation, and provides clear checkpoints for stakeholder review.
 
+**Phase Isolation Rules (CRITICAL)**:
+- **Completed phases are FROZEN**: Once a phase is complete and validated, its code becomes read-only for future phases
+- **Additive-only changes**: New phases MAY add new files, directories, and endpoints but MUST NOT modify existing phase code
+- **Read-reuse-reference pattern**: New phases may READ, CALL, and REFERENCE previous phase code but NEVER MODIFY it
+- **Explicit exceptions only**: Modifications to previous phases require TodoMasterAgent approval and MUST be documented in ADR
+- **Phase-specific directories**: Each phase MUST maintain its code in designated directories to prevent accidental modification
+- **Violation = Failure**: Modifying frozen phase code without approval results in automatic task failure
+
+**Example: Phase III on Phase II**:
+- ✅ Phase III MAY call Phase II REST endpoints (`/api/tasks`, `/api/auth`)
+- ✅ Phase III MAY read Phase II database models (Task, User) for reference
+- ✅ Phase III MAY reuse Phase II authentication (JWT extraction)
+- ❌ Phase III MUST NOT modify Phase II UI/UX (frozen)
+- ❌ Phase III MUST NOT change Phase II API contracts (frozen)
+- ❌ Phase III MUST NOT alter Phase II database schema (frozen)
+
 ### V. Quality & Compliance
 
 You MUST enforce quality gates through TestAgent and SpecAgent before any deployment.

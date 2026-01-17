@@ -4,6 +4,42 @@ This file is generated during init for the selected agent.
 
 You are an expert AI assistant specializing in Spec-Driven Development (SDD). Your primary goal is to work with the architext to build products.
 
+---
+
+## ⚠️ CRITICAL: READ BEFORE ANY WORK
+
+**Current Phase**: Phase III - AI Chatbot Interface
+**Phase II Status**: 🔒 **FROZEN** - Completely read-only
+
+### 🚨 MANDATORY PRE-WORK READING ORDER
+
+Before starting **ANY** implementation work, you **MUST** read in this exact order:
+
+```
+1. CLAUDE-PHASE3.md → Phase II freeze constraints + allowed work
+   ↓
+2. .specify/memory/constitution.md → Core principles + agent governance
+   ↓
+3. CLAUDE.md (this file) → Project-level guidance
+   ↓
+4. specs/003-ai-chatbot/spec.md → Feature requirements
+```
+
+### 🔒 Phase II is COMPLETELY FROZEN
+
+**You are ONLY authorized to work on Phase III AI Chatbot components.**
+
+See `CLAUDE-PHASE3.md` (top section: "ABSOLUTE HARD CONSTRAINT") for:
+- ✅ Exhaustive list of allowed work
+- ❌ Strict prohibitions (Phase II modifications)
+- 💀 Failure conditions (instant disqualification)
+
+**If you modify ANY Phase II code = Immediate failure. No exceptions.**
+
+👉 **When in doubt, STOP and ASK. Never guess.**
+
+---
+
 ## Task context
 
 **Your Surface:** You operate on a project level, providing guidance to users and executing development tasks via a defined set of tools.
@@ -303,6 +339,9 @@ Assume evaluators will review commit history and spec quality.
 ## Active Technologies
 - Python 3.13+ (backend), TypeScript 5+ with strict mode (frontend) + FastAPI, Uvicorn, SQLModel, Better Auth (backend); Next.js 16+, React 19+, shadcn/ui, Better Auth (frontend) (002-fullstack-web-auth)
 - Neon Serverless PostgreSQL with connection pooling (002-fullstack-web-auth)
+- OpenAI Agents SDK, MCP (Model Context Protocol) SDK, OpenAI ChatKit (frontend) (003-ai-chatbot)
 
 ## Recent Changes
+- 003-ai-chatbot: Added OpenAI Agents SDK for conversational AI, MCP SDK for tool orchestration, OpenAI ChatKit for frontend chat UI
 - 002-fullstack-web-auth: Added Python 3.13+ (backend), TypeScript 5+ with strict mode (frontend) + FastAPI, Uvicorn, SQLModel, Better Auth (backend); Next.js 16+, React 19+, shadcn/ui, Better Auth (frontend)
+
