@@ -110,7 +110,7 @@ export function ChatInterface({ onTaskUpdate }: ChatInterfaceProps) {
       } else {
         toast({
           title: 'Error',
-          description: 'Failed to send message. Please try again.',
+          description: 'Failed to send message. Please check your OpenAI credits and try again.',
           variant: 'destructive'
         })
       }
