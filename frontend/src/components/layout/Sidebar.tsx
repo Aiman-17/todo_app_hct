@@ -13,7 +13,8 @@
  */
 
 import { Home, CheckSquare, Calendar, Settings, MessageCircle, LogOut, Menu, X } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { clearTokens } from "@/lib/api";
 import { useState } from "react";
 
@@ -26,14 +27,8 @@ interface NavItem {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const handleLogout = () => {
-    clearTokens();
-    router.push("/");
-  };
 
   const navItems: NavItem[] = [
     { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -43,7 +38,10 @@ export function Sidebar() {
     { icon: Settings, label: "Settings", href: "/dashboard/settings" },
   ];
 
-  const isActive = (href: string) => pathname === href;
+  const isActive = (href: string) => {
+    // Exact match or starts with href/ (for nested routes)
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
@@ -94,25 +92,15 @@ export function Sidebar() {
 
           return (
             <div key={item.label} className="relative">
-              <button
-                onClick={() => {
-                  console.log("🔍 Sidebar click", {
-                    href: item.href,
-                    pathname,
-                    mobileMenuOpen: isMobileMenuOpen,
-                  });
-
-                  router.push(item.href);
-                  console.log("✅ router.push invoked");
-
-                  closeMobileMenu();
-                  console.log("✅ closeMobileMenu invoked");
-                }}
+              <Link
+                href={item.href}
+                onClick={closeMobileMenu}
                 onMouseEnter={() => setHoveredItem(item.label)}
                 onMouseLeave={() => setHoveredItem(null)}
                 className={`
                   w-full min-h-[44px] rounded-lg flex items-center justify-center
                   transition-all duration-200 ease-in-out
+                  no-underline hover:no-underline
                   ${
                     active
                       ? "bg-rose-white text-seal-brown shadow-md"
@@ -123,7 +111,7 @@ export function Sidebar() {
                 aria-current={active ? "page" : undefined}
               >
                 <Icon className="w-5 h-5" aria-hidden="true" />
-              </button>
+              </Link>
 
               {/* Tooltip on hover */}
               {hoveredItem === item.label && (
@@ -142,9 +130,10 @@ export function Sidebar() {
 
       {/* Logout Button */}
       <div className="relative mt-auto">
-        <button
+        <Link
+          href="/"
           onClick={() => {
-            handleLogout();
+            clearTokens();
             closeMobileMenu();
           }}
           onMouseEnter={() => setHoveredItem("Logout")}
@@ -153,11 +142,12 @@ export function Sidebar() {
             w-12 min-h-[44px] rounded-lg flex items-center justify-center
             text-rose-white hover:bg-rose-white/10 hover:text-rose-white
             transition-all duration-200 ease-in-out
+            no-underline hover:no-underline
           "
           aria-label="Logout"
         >
           <LogOut className="w-5 h-5" aria-hidden="true" />
-        </button>
+        </Link>
 
         {/* Logout Tooltip */}
         {hoveredItem === "Logout" && (
