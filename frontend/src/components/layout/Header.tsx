@@ -82,7 +82,7 @@ export function Header() {
               <Link href="/dashboard" className="text-sm hover:underline">
                 Dashboard
               </Link>
-              <Link href="/chat" className="text-sm hover:underline">
+              <Link href="/dashboard/chat" className="text-sm hover:underline">
                 AI Chat
               </Link>
               <span className="text-sm text-gray-600 hidden sm:inline" aria-label={`Logged in as ${user.name}`}>

@@ -12,7 +12,7 @@
  * - Responsive: hidden on mobile with hamburger menu toggle
  */
 
-import { Home, CheckSquare, Calendar, Settings, LogOut, Menu, X } from "lucide-react";
+import { Home, CheckSquare, Calendar, Settings, MessageCircle, LogOut, Menu, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { clearTokens } from "@/lib/api";
 import { useState } from "react";
@@ -39,6 +39,7 @@ export function Sidebar() {
     { icon: Home, label: "Dashboard", href: "/dashboard" },
     { icon: CheckSquare, label: "Tasks", href: "/dashboard" },
     { icon: Calendar, label: "Calendar", href: "/dashboard/calendar" },
+    { icon: MessageCircle, label: "Chat", href: "/dashboard/chat" },
     { icon: Settings, label: "Settings", href: "/dashboard/settings" },
   ];
 
@@ -95,8 +96,17 @@ export function Sidebar() {
             <div key={item.label} className="relative">
               <button
                 onClick={() => {
+                  console.log("🔍 Sidebar click", {
+                    href: item.href,
+                    pathname,
+                    mobileMenuOpen: isMobileMenuOpen,
+                  });
+
                   router.push(item.href);
+                  console.log("✅ router.push invoked");
+
                   closeMobileMenu();
+                  console.log("✅ closeMobileMenu invoked");
                 }}
                 onMouseEnter={() => setHoveredItem(item.label)}
                 onMouseLeave={() => setHoveredItem(null)}

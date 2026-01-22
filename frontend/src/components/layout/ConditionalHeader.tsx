@@ -13,8 +13,8 @@ import { Header } from "./Header";
 export function ConditionalHeader() {
   const pathname = usePathname();
 
-  // Don't show header on dashboard or chat routes (they have their own layout)
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/chat")) {
+  // Don't show header on dashboard routes (they have their own layout)
+  if (pathname.startsWith("/dashboard")) {
     return null;
   }
 
