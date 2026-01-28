@@ -32,7 +32,6 @@ export function Sidebar() {
 
   const navItems: NavItem[] = [
     { icon: Home, label: "Dashboard", href: "/dashboard" },
-    { icon: CheckSquare, label: "Tasks", href: "/dashboard" },
     { icon: Calendar, label: "Calendar", href: "/dashboard/calendar" },
     { icon: MessageCircle, label: "Chat", href: "/dashboard/chat" },
     { icon: Settings, label: "Settings", href: "/dashboard/settings" },
