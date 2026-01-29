@@ -35,6 +35,12 @@ export function PomodoroTimer({ onComplete, taskName }: PomodoroTimerProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onCompleteRef = useRef(onComplete);
+
+  // Keep onComplete ref up to date
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const totalSeconds = selectedDuration * 60;
   const progress = ((totalSeconds - timeLeft) / totalSeconds) * 100;
@@ -56,63 +62,35 @@ export function PomodoroTimer({ onComplete, taskName }: PomodoroTimerProps) {
   // Timer logic
 
   useEffect(() => {
-  if (!isRunning) {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    return;
-  }
-
-  intervalRef.current = setInterval(() => {
-    setTimeLeft((prev) => {
-      if (prev <= 1) {
-        clearInterval(intervalRef.current!);
+    if (!isRunning) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
         intervalRef.current = null;
-        setIsRunning(false);
-        setIsCompleted(true);
-        onComplete?.();
-        return 0;
       }
-      return prev - 1;
-    });
-  }, 1000);
-
-  return () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+      return;
     }
-  };
-}, [isRunning, onComplete]);
 
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          setIsRunning(false);
+          setIsCompleted(true);
+          onCompleteRef.current?.();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-  // useEffect(() => {
-  //   if (isRunning && timeLeft > 0) {
-  //     intervalRef.current = setInterval(() => {
-  //       setTimeLeft((prev) => {
-  //         if (prev <= 1) {
-  //           setIsRunning(false);
-  //           setIsCompleted(true);
-  //           onComplete?.();
-  //           // Play notification sound (optional)
-  //           return 0;
-  //         }
-  //         return prev - 1;
-  //       });
-  //     }, 1000);
-  //   } else {
-  //     if (intervalRef.current) {
-  //       clearInterval(intervalRef.current);
-  //     }
-  //   }
-
-  //   return () => {
-  //     if (intervalRef.current) {
-  //       clearInterval(intervalRef.current);
-  //     }
-  //   };
-  // }, [isRunning, timeLeft, onComplete]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isRunning]); // Only depend on isRunning - stable!
 
   const handleStart = () => {
     setIsRunning(true);
