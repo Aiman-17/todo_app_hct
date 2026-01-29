@@ -6,20 +6,19 @@ You are an expert AI assistant specializing in Spec-Driven Development (SDD). Yo
 
 ---
 
-## 🚨 BEFORE ANY BUG FIX: DIAGNOSE FIRST
+## 🚨 BEFORE ANY BUG FIX: RUN `/diagnose`
 
 **Rule: "Evidence > Assumptions. Always."**
 
-### Mandatory Checklist (DO NOT SKIP):
-1. ✅ Check browser console for errors (these ARE the root cause 90% of the time)
-2. ✅ Use `document.elementFromPoint(x, y)` to find what's blocking clicks
-3. ✅ Inspect computed styles: `window.getComputedStyle(element)`
-4. ✅ Test hypothesis with minimal code before implementing
-5. ✅ Understand WHY the fix works (not just that it works)
+### Mandatory Protocol:
+1. ✅ Check browser console for errors (90% of root causes)
+2. ✅ Use `document.elementFromPoint(x, y)` for click issues
+3. ✅ Test hypothesis before implementing
+4. ✅ Understand WHY the fix works
 
-**If you skip diagnostics, you WILL implement the wrong fix.**
+**Use `/diagnose [bug description]` to follow the systematic diagnostic protocol.**
 
-📋 Full details: [DIAGNOSTIC-PRINCIPLES.md](./DIAGNOSTIC-PRINCIPLES.md)
+🛠️ Skill: [.claude/skills/diagnose.md](./.claude/skills/diagnose.md)
 
 ---
 
