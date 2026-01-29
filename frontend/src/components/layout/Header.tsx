@@ -100,19 +100,19 @@ export function Header() {
               </Button>
             </>
           ) : (
-            // Unauthenticated user 
-              <>
-                <Link href="/login">
-                  <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]">
-                    Log in
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm" className="min-h-[44px] min-w-[44px]">
-                    Sign up
-                  </Button>
-                </Link>
-              </>
+            // Unauthenticated user - hide on small screens, show on sm and above
+            <div className="hidden sm:flex items-center gap-4">
+              <Link href="/login">
+                <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="sm" className="min-h-[44px] min-w-[44px]">
+                  Sign up
+                </Button>
+              </Link>
+            </div>
           )}
         </nav>
       </div>
