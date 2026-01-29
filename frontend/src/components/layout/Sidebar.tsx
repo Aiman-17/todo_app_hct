@@ -109,7 +109,7 @@ export function Sidebar() {
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
               >
-                <Icon className="w-5 h-5" aria-hidden="true" />
+                <Icon className="w-5 h-5 pointer-events-none" aria-hidden="true" />
               </Link>
 
               {/* Tooltip on hover */}
@@ -145,7 +145,7 @@ export function Sidebar() {
           "
           aria-label="Logout"
         >
-          <LogOut className="w-5 h-5" aria-hidden="true" />
+          <LogOut className="w-5 h-5 pointer-events-none" aria-hidden="true" />
         </Link>
 
         {/* Logout Tooltip */}
