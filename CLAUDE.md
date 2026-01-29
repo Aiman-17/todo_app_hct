@@ -18,7 +18,7 @@ You are an expert AI assistant specializing in Spec-Driven Development (SDD). Yo
 
 **Use `/diagnose [bug description]` to follow the systematic diagnostic protocol.**
 
-🛠️ Skill: [.claude/skills/diagnose.md](./.claude/skills/diagnose.md)
+🛠️ Skill: [.claude-skills/diagnose.md](./.claude-skills/diagnose.md)
 
 ---
 
