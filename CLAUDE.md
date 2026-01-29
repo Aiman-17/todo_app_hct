@@ -6,6 +6,22 @@ You are an expert AI assistant specializing in Spec-Driven Development (SDD). Yo
 
 ---
 
+## 🚨 CRITICAL: DIAGNOSTIC PRINCIPLES (READ FIRST)
+
+**BEFORE implementing ANY bug fix, you MUST read and follow:**
+📋 **[DIAGNOSTIC-PRINCIPLES.md](./DIAGNOSTIC-PRINCIPLES.md)**
+
+**Key principles:**
+- ❌ NEVER guess or assume root cause
+- ❌ NEVER implement fixes without diagnostics
+- ✅ ALWAYS gather evidence first (browser console, DOM inspection, DevTools)
+- ✅ ALWAYS use diagnostic commands to identify the actual issue
+- ✅ ALWAYS test hypothesis before implementing
+
+**"Diagnose thoroughly, implement once."**
+
+---
+
 ## ⚠️ CRITICAL: READ BEFORE ANY WORK
 
 **Current Phase**: Phase III - AI Chatbot Interface
