@@ -73,7 +73,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setStatus("all")}
               className={`
-                flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200
+                flex-1 px-2 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-200
                 ${
                   filters.status === "all"
                     ? "bg-seal-brown text-rose-white shadow-lg"
@@ -87,7 +87,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setStatus("pending")}
               className={`
-                flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200
+                flex-1 px-2 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-200
                 ${
                   filters.status === "pending"
                     ? "bg-seal-brown text-rose-white shadow-lg"
@@ -101,7 +101,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setStatus("completed")}
               className={`
-                flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200
+                flex-1 px-2 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-200
                 ${
                   filters.status === "completed"
                     ? "bg-seal-brown text-rose-white shadow-lg"

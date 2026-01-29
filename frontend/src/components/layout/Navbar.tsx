@@ -82,7 +82,7 @@ export function Navbar() {
           {/* Left: App Branding */}
           <div className="flex items-center gap-3 pl-12 lg:pl-0" role="banner">
             <CheckSquare className="w-6 h-6 text-rose-white" aria-hidden="true" />
-            <h1 className="text-rose-white font-bold text-xl">Todo App</h1>
+            <h1 className="text-rose-white font-bold text-base sm:text-xl">Todo App</h1>
           </div>
 
           {/* Right: User Info & Actions */}
