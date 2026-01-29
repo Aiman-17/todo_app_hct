@@ -8,7 +8,7 @@
  * Automatically saves and restores filter preferences across sessions.
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 
 export interface FilterState {
   search: string;
@@ -114,35 +114,35 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     }
   }, [filters, isInitialized]);
 
-  const setSearch = (search: string) => {
+  const setSearch = useCallback((search: string) => {
     setFilters((prev) => ({ ...prev, search }));
-  };
+  }, []);
 
-  const setPriority = (priority: ("high" | "medium" | "low")[] | null) => {
+  const setPriority = useCallback((priority: ("high" | "medium" | "low")[] | null) => {
     setFilters((prev) => ({ ...prev, priority }));
-  };
+  }, []);
 
-  const setStatus = (status: "all" | "pending" | "completed") => {
+  const setStatus = useCallback((status: "all" | "pending" | "completed") => {
     setFilters((prev) => ({ ...prev, status }));
-  };
+  }, []);
 
-  const setDueDate = (dueDate: "all" | "today" | "tomorrow" | "this_week" | "overdue") => {
+  const setDueDate = useCallback((dueDate: "all" | "today" | "tomorrow" | "this_week" | "overdue") => {
     setFilters((prev) => ({ ...prev, dueDate }));
-  };
+  }, []);
 
-  const setViewMode = (viewMode: "grid" | "list") => {
+  const setViewMode = useCallback((viewMode: "grid" | "list") => {
     setFilters((prev) => ({ ...prev, viewMode }));
-  };
+  }, []);
 
-  const setSortBy = (sortBy: "created_at" | "due_date" | "priority" | "updated_at") => {
+  const setSortBy = useCallback((sortBy: "created_at" | "due_date" | "priority" | "updated_at") => {
     setFilters((prev) => ({ ...prev, sortBy }));
-  };
+  }, []);
 
-  const setOrder = (order: "asc" | "desc") => {
+  const setOrder = useCallback((order: "asc" | "desc") => {
     setFilters((prev) => ({ ...prev, order }));
-  };
+  }, []);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
     // Clear from localStorage (client-side only)
     if (typeof window !== "undefined") {
@@ -152,7 +152,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
         console.error("Failed to clear filter preferences from localStorage:", error);
       }
     }
-  };
+  }, []);
 
   return (
     <FilterContext.Provider
