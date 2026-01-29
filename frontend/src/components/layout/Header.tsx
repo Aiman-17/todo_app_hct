@@ -17,7 +17,7 @@ import type { User } from "@/types/auth";
 
 export function Header() {
   const router = useRouter();
-  const pathname = usePathname();
+  // const pathname = usePathname();
   const { toast } = useToast();
 
   const [user, setUser] = useState<User | null>(null);
@@ -100,8 +100,7 @@ export function Header() {
               </Button>
             </>
           ) : (
-            // Unauthenticated user - hide buttons on auth pages
-            !pathname.startsWith('/login') && !pathname.startsWith('/signup') && (
+            // Unauthenticated user 
               <>
                 <Link href="/login">
                   <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]">
@@ -114,7 +113,6 @@ export function Header() {
                   </Button>
                 </Link>
               </>
-            )
           )}
         </nav>
       </div>
