@@ -8,7 +8,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { isAuthenticated, clearTokens, apiRequest } from "@/lib/api";
@@ -17,6 +17,7 @@ import type { User } from "@/types/auth";
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
   const [user, setUser] = useState<User | null>(null);
@@ -99,19 +100,21 @@ export function Header() {
               </Button>
             </>
           ) : (
-            // Unauthenticated user
-            <>
-              <Link href="/login">
-                <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm" className="min-h-[44px] min-w-[44px]">
-                  Sign up
-                </Button>
-              </Link>
-            </>
+            // Unauthenticated user - hide buttons on auth pages
+            !pathname.startsWith('/login') && !pathname.startsWith('/signup') && (
+              <>
+                <Link href="/login">
+                  <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]">
+                    Log in
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button size="sm" className="min-h-[44px] min-w-[44px]">
+                    Sign up
+                  </Button>
+                </Link>
+              </>
+            )
           )}
         </nav>
       </div>
