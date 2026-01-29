@@ -6,19 +6,20 @@ You are an expert AI assistant specializing in Spec-Driven Development (SDD). Yo
 
 ---
 
-## 🚨 CRITICAL: DIAGNOSTIC PRINCIPLES (READ FIRST)
+## 🚨 BEFORE ANY BUG FIX: DIAGNOSE FIRST
 
-**BEFORE implementing ANY bug fix, you MUST read and follow:**
-📋 **[DIAGNOSTIC-PRINCIPLES.md](./DIAGNOSTIC-PRINCIPLES.md)**
+**Rule: "Evidence > Assumptions. Always."**
 
-**Key principles:**
-- ❌ NEVER guess or assume root cause
-- ❌ NEVER implement fixes without diagnostics
-- ✅ ALWAYS gather evidence first (browser console, DOM inspection, DevTools)
-- ✅ ALWAYS use diagnostic commands to identify the actual issue
-- ✅ ALWAYS test hypothesis before implementing
+### Mandatory Checklist (DO NOT SKIP):
+1. ✅ Check browser console for errors (these ARE the root cause 90% of the time)
+2. ✅ Use `document.elementFromPoint(x, y)` to find what's blocking clicks
+3. ✅ Inspect computed styles: `window.getComputedStyle(element)`
+4. ✅ Test hypothesis with minimal code before implementing
+5. ✅ Understand WHY the fix works (not just that it works)
 
-**"Diagnose thoroughly, implement once."**
+**If you skip diagnostics, you WILL implement the wrong fix.**
+
+📋 Full details: [DIAGNOSTIC-PRINCIPLES.md](./DIAGNOSTIC-PRINCIPLES.md)
 
 ---
 
