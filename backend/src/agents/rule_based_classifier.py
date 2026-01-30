@@ -172,15 +172,23 @@ class RuleBasedClassifier:
                 return entities
 
         # Extract text reference (everything after keywords)
-        # "delete buy groceries", "complete chat with you"
+        # "mark test the bot as completed" -> extract "test the bot"
+        # "delete buy groceries" -> extract "buy groceries"
         for keyword in ['delete', 'remove', 'complete', 'done', 'mark', 'finish']:
             if keyword in msg:
                 # Get text after keyword
                 parts = msg.split(keyword, 1)
                 if len(parts) > 1:
                     ref_text = parts[1].strip()
-                    # Remove common words
-                    ref_text = re.sub(r'\b(task|the|a|an|my|as|to|it|all)\b', '', ref_text).strip()
+
+                    # Remove status phrases AFTER extracting (as completed, as done, etc.)
+                    ref_text = re.sub(r'\s+as\s+(completed?|done|finished?)\s*$', '', ref_text, flags=re.IGNORECASE).strip()
+
+                    # Remove leading "task" or "my task" if present
+                    ref_text = re.sub(r'^\s*(the\s+)?task\s+', '', ref_text, flags=re.IGNORECASE).strip()
+                    ref_text = re.sub(r'^\s*my\s+task\s+', '', ref_text, flags=re.IGNORECASE).strip()
+
+                    # Keep everything else including "the", "a", etc. (they might be part of task title)
                     if ref_text and len(ref_text) > 2:
                         entities['task_reference'] = ref_text
                         return entities

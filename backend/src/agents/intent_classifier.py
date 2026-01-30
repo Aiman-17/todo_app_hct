@@ -125,9 +125,12 @@ Extract relevant entities:
   * "#42" → 42
   * "id20" → 20
   * "task3" → 3
-- task_reference: Text reference to a task (e.g., "sss", "the grocery one", "first task", "it", "that")
-  * If user says "delete task sss" → task_reference = "sss"
-  * If user says "delete id3" → task_id = 3 (NOT task_reference)
+- task_reference: Text reference to a task - PRESERVE the full phrase including "the", "a", etc.
+  * "mark test the bot as completed" → task_reference = "test the bot"
+  * "delete task sss" → task_reference = "sss"
+  * "complete the grocery task" → task_reference = "the grocery task"
+  * "delete id3" → task_id = 3 (NOT task_reference)
+  * IMPORTANT: Do NOT strip "the", "a", "an" from task_reference - they may be part of the task title!
 - completed: true/false for completion status (use for filtering in list_tasks or batch delete)
 - tags: List of tags mentioned
 - filter_completed: true if user wants to filter by completed status (e.g., "completed tasks", "done tasks")
@@ -166,6 +169,8 @@ Examples:
 "delete id4" -> {"intent": "delete_task", "confidence": 0.98, "entities": {"task_id": 4}}
 "delete task3" -> {"intent": "delete_task", "confidence": 0.98, "entities": {"task_id": 3}}
 "delete task sss" -> {"intent": "delete_task", "confidence": 0.95, "entities": {"task_reference": "sss"}}
+"mark test the bot as completed" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_reference": "test the bot"}}
+"complete the grocery task" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_reference": "the grocery task"}}
 "delte 3 task" -> {"intent": "delete_task", "confidence": 0.85, "entities": {"task_id": 3}}
 "hey" -> {"intent": "unclear", "confidence": 0.1, "entities": {}}
 "h" -> {"intent": "unclear", "confidence": 0.1, "entities": {}}"""
