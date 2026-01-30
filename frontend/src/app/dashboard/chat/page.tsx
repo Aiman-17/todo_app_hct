@@ -24,16 +24,16 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex">
+    <div className="h-[calc(100vh-4rem)] flex bg-gradient-to-br from-rose-white to-rose-white/80">
       {/* Main Chat Area (70%) */}
       <div className={`flex-1 transition-all duration-300 ${showTaskPanel ? 'lg:w-[70%]' : 'w-full'}`}>
         <div className="h-full flex flex-col">
           {/* Header with toggle button */}
-          <div className="border-b p-3 flex items-center justify-between bg-background">
+          <div className="border-b border-seal-brown/10 p-4 flex items-center justify-between bg-white/80 backdrop-blur-sm">
             <div>
-              <h1 className="text-lg font-semibold">AI Task Assistant</h1>
-              <p className="text-sm text-muted-foreground">
-                Manage your tasks with natural language
+              <h1 className="text-xl font-bold text-seal-brown">AI Task Assistant</h1>
+              <p className="text-sm text-seal-brown/60">
+                Manage your tasks with natural language—I understand typos too!
               </p>
             </div>
 
@@ -42,7 +42,7 @@ export default function ChatPage() {
               variant="ghost"
               size="sm"
               onClick={() => setShowTaskPanel(!showTaskPanel)}
-              className="hidden lg:flex"
+              className="hidden lg:flex text-seal-brown hover:bg-seal-brown/10"
             >
               {showTaskPanel ? (
                 <>

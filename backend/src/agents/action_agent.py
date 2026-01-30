@@ -169,8 +169,66 @@ class ActionAgent:
         )
 
     def _execute_delete_task(self, db: Session, params: Dict, user_id: str, correlation_id: str) -> Dict:
-        """Execute delete_task MCP tool."""
-        # Validate task_id
+        """Execute delete_task MCP tool (single or batch)."""
+        # Check if this is a batch delete operation
+        if params.get("batch_delete") and params.get("filter_completed"):
+            # Batch delete all completed tasks
+            logger.info(
+                "ActionAgent: executing batch delete of completed tasks",
+                extra={"user_id": user_id, "correlation_id": correlation_id}
+            )
+
+            # Get all completed tasks
+            list_result = list_tasks(
+                db=db,
+                user_id=user_id,
+                completed=True,
+                correlation_id=correlation_id
+            )
+
+            if not list_result.get("success"):
+                return {"success": False, "error": "Failed to fetch completed tasks"}
+
+            completed_tasks = list_result.get("tasks", [])
+
+            if not completed_tasks:
+                return {
+                    "success": True,
+                    "deleted_count": 0,
+                    "message": "No completed tasks found to delete"
+                }
+
+            # Delete each completed task
+            deleted_count = 0
+            failed_count = 0
+            for task in completed_tasks:
+                try:
+                    delete_result = delete_task(
+                        db=db,
+                        user_id=user_id,
+                        task_id=task["id"],
+                        correlation_id=correlation_id
+                    )
+                    if delete_result.get("success"):
+                        deleted_count += 1
+                    else:
+                        failed_count += 1
+                except Exception as e:
+                    logger.error(
+                        f"ActionAgent: failed to delete task {task['id']} during batch delete",
+                        extra={"user_id": user_id, "error": str(e), "correlation_id": correlation_id}
+                    )
+                    failed_count += 1
+
+            return {
+                "success": True,
+                "deleted_count": deleted_count,
+                "failed_count": failed_count,
+                "message": f"Deleted {deleted_count} completed task(s)" +
+                          (f" ({failed_count} failed)" if failed_count > 0 else "")
+            }
+
+        # Single task deletion
         task_id = params.get("task_id")
         if not task_id:
             return {"success": False, "error": "Task ID is required to delete"}

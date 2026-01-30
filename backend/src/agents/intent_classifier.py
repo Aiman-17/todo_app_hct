@@ -1,16 +1,16 @@
 """
 Phase III: IntentClassifierAgent for natural language intent classification.
 
-Parses user messages to extract intent and entities using OpenAI's API.
+Parses user messages to extract intent and entities using Google Gemini API.
 """
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 import json
 import logging
 import time
-from openai import OpenAI
-from openai import OpenAIError, RateLimitError, APIError
+import google.generativeai as genai
 
 from src.config import settings
+from src.agents.rule_based_classifier import RuleBasedClassifier
 
 logger = logging.getLogger("mcp_tools")
 
@@ -43,12 +43,13 @@ class IntentClassifierAgent:
     """
 
     def __init__(self):
-        """Initialize OpenAI client with API key."""
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "gpt-4o-mini"  # Use GPT-4o-mini for cost-effective intent classification
+        """Initialize Gemini client with API key and rule-based fallback."""
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        self.model = genai.GenerativeModel('gemini-2.0-flash-lite')  # Use Gemini 2.0 Flash Lite (higher free tier quota)
         self.confidence_threshold = 0.7
+        self.fallback_classifier = RuleBasedClassifier()  # Fallback when Gemini fails
 
-    def classify(self, message: str, user_id: str = None, correlation_id: str = None) -> Dict[str, Any]:
+    def classify(self, message: str, user_id: str = None, correlation_id: str = None, conversation_history: Optional[List] = None) -> Dict[str, Any]:
         """
         Classify user message into intent and extract entities.
 
@@ -84,13 +85,24 @@ class IntentClassifierAgent:
         for attempt in range(max_retries + 1):
             try:
                 # System prompt defining intent classification task
-                system_prompt = """You are an intent classification assistant for a todo application.
+                system_prompt = """You are a friendly, understanding AI assistant for todo management.
+
+PERSONALITY:
+- Be conversational and helpful
+- Understand typos and informal language
+- Users make mistakes - interpret intent, not exact spelling
+
+TYPO EXAMPLES:
+- "mkr tsk 5 complet" → mark task 5 complete
+- "shw my tsks" → show my tasks
+- "ad tsk buy milk" → add task buy milk
+- "dlete teh first one" → delete the first task
 
 Classify user messages into one of these intents:
 - create_task: User wants to create a new task
-- list_tasks: User wants to view their tasks (show, list, display)
+- list_tasks: User wants to view their tasks (show, list, display, view)
 - update_task: User wants to modify an existing task
-- delete_task: User wants to delete/remove a task
+- delete_task: User wants to delete/remove a task (single or batch)
 - complete_task: User wants to mark a task as done/complete
 - unclear: Intent cannot be determined
 
@@ -98,10 +110,21 @@ Extract relevant entities:
 - title: Task title/description
 - priority: high, medium, or low
 - due_date: Date/time mentioned (in ISO format if possible)
-- task_id: Numeric task ID if mentioned (e.g., "task 5", "number 3")
-- task_reference: Text reference to a task (e.g., "the grocery one", "first task")
-- completed: true/false for completion status
+- task_id: Numeric task ID if mentioned in ANY format:
+  * "task 5" → 5
+  * "id 20" → 20
+  * "task id20" → 20
+  * "number 3" → 3
+  * "#42" → 42
+  * "id20" → 20
+- task_reference: Text reference to a task (e.g., "the grocery one", "first task", "it", "that")
+- completed: true/false for completion status (use for filtering in list_tasks or batch delete)
 - tags: List of tags mentioned
+- filter_completed: true if user wants to filter by completed status (e.g., "completed tasks", "done tasks")
+
+CONTEXT AWARENESS:
+If conversation_history is provided and user says "it", "that", "the one", etc.,
+check recent messages for task references.
 
 Return JSON only:
 {
@@ -119,23 +142,52 @@ Confidence scoring:
 Examples:
 "remind me to call mom" -> {"intent": "create_task", "confidence": 0.95, "entities": {"title": "call mom"}}
 "show my tasks" -> {"intent": "list_tasks", "confidence": 1.0, "entities": {}}
+"view tasks" -> {"intent": "list_tasks", "confidence": 1.0, "entities": {}}
 "mark task 5 as done" -> {"intent": "complete_task", "confidence": 0.98, "entities": {"task_id": 5}}
-"do the thing" -> {"intent": "unclear", "confidence": 0.2, "entities": {}}"""
+"mark id 20" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_id": 20}}
+"mark task id20" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_id": 20}}
+"marks id 20 tasks as completed" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_id": 20}}
+"delete completed tasks" -> {"intent": "list_tasks", "confidence": 0.9, "entities": {"filter_completed": true}, "note": "User wants completed tasks, likely to delete them - show list first"}
+"delete all done tasks" -> {"intent": "list_tasks", "confidence": 0.9, "entities": {"filter_completed": true}}
+"delete id4" -> {"intent": "delete_task", "confidence": 0.98, "entities": {"task_id": 4}}
+"delete aaa" -> {"intent": "delete_task", "confidence": 0.95, "entities": {"task_reference": "aaa"}}
+"what you updated in do chat page update task?" -> {"intent": "list_tasks", "confidence": 0.8, "entities": {"task_reference": "do chat page update"}, "note": "User wants to see task details"}
+"update do chat page update task" -> {"intent": "update_task", "confidence": 0.85, "entities": {"task_reference": "do chat page update"}}
+"hey" -> {"intent": "unclear", "confidence": 0.1, "entities": {}}
+"h" -> {"intent": "unclear", "confidence": 0.1, "entities": {}}
+"mark it complete" (after creating task) -> {"intent": "complete_task", "confidence": 0.85, "entities": {"task_reference": "it"}}"""
 
-                # Call OpenAI API
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": message}
-                    ],
-                    temperature=0.3,  # Lower temperature for consistent classification
-                    max_tokens=300,
-                    response_format={"type": "json_object"}  # Ensure JSON response
+                # Build conversation context for Gemini
+                conversation_content = system_prompt + "\n\n"
+
+                # Add conversation history for context
+                if conversation_history:
+                    conversation_content += "RECENT CONVERSATION:\n"
+                    for msg in conversation_history[-10:]:  # Last 10 messages for context
+                        role = "User" if msg.role == "user" else "Assistant"
+                        conversation_content += f"{role}: {msg.content}\n"
+                    conversation_content += "\n"
+
+                conversation_content += f"CURRENT USER MESSAGE: {message}\n\nRespond with JSON only."
+
+                # Call Gemini API
+                response = self.model.generate_content(
+                    conversation_content,
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.3,  # Lower temperature for consistent classification
+                        max_output_tokens=300,
+                    )
                 )
 
                 # Parse response
-                result_text = response.choices[0].message.content
+                result_text = response.text
+
+                # Clean up response (Gemini sometimes adds markdown)
+                if "```json" in result_text:
+                    result_text = result_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in result_text:
+                    result_text = result_text.split("```")[1].split("```")[0].strip()
+
                 result = json.loads(result_text)
 
                 # Log classification
@@ -164,27 +216,32 @@ Examples:
 
                 return result
 
-            except (RateLimitError, APIError, OpenAIError) as e:
-                last_error = e
-                if attempt < max_retries:
-                    logger.warning(
-                        f"IntentClassifierAgent: OpenAI API error (attempt {attempt + 1}/{max_retries + 1}), retrying in {retry_delay}s",
-                        extra={"user_id": user_id or "unknown", "correlation_id": correlation_id or "none", "error": str(e)}
-                    )
-                    time.sleep(retry_delay)
-                    continue
+            except Exception as api_error:
+                # Catch Gemini API errors (rate limits, network issues, etc.)
+                if "ResourceExhausted" in str(api_error) or "429" in str(api_error) or "quota" in str(api_error).lower():
+                    last_error = api_error
+                    if attempt < max_retries:
+                        logger.warning(
+                            f"IntentClassifierAgent: Gemini API rate limit (attempt {attempt + 1}/{max_retries + 1}), retrying in {retry_delay}s",
+                            extra={"user_id": user_id or "unknown", "correlation_id": correlation_id or "none", "error": str(api_error)}
+                        )
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        # Quota exceeded - use rule-based fallback
+                        logger.warning(
+                            "IntentClassifierAgent: Gemini API quota exceeded, using rule-based fallback",
+                            extra={"user_id": user_id or "unknown", "correlation_id": correlation_id or "none"}
+                        )
+                        return self.fallback_classifier.classify(message, user_id, correlation_id, conversation_history)
                 else:
+                    # Other API errors - use rule-based fallback
                     logger.error(
-                        "IntentClassifierAgent: OpenAI API failed after retries",
-                        extra={"user_id": user_id or "unknown", "correlation_id": correlation_id or "none", "error": str(e)},
+                        "IntentClassifierAgent: Gemini API error, using rule-based fallback",
+                        extra={"user_id": user_id or "unknown", "correlation_id": correlation_id or "none", "error": str(api_error)},
                         exc_info=True
                     )
-                    return {
-                        "intent": "unclear",
-                        "confidence": 0.0,
-                        "entities": {},
-                        "error": f"OpenAI API unavailable: {str(e)}"
-                    }
+                    return self.fallback_classifier.classify(message, user_id, correlation_id, conversation_history)
 
             except json.JSONDecodeError as e:
                 logger.error(

@@ -20,13 +20,23 @@ export class ChatAPIError extends Error {
 }
 
 /**
+ * Get access token from cookies (same as main API)
+ */
+function getCookie(name: string): string | null {
+  if (typeof window === 'undefined') return null
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? match[2] : null
+}
+
+/**
  * Send chat message to backend
  */
 export async function sendChatMessage(
   message: string,
   conversationId?: string
 ): Promise<ChatResponse> {
-  const token = localStorage.getItem('auth_token')
+  // Get token from cookies (same as rest of the app)
+  const token = getCookie('access_token')
 
   if (!token) {
     throw new ChatAPIError('Not authenticated', 401)

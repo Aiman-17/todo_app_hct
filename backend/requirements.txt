@@ -29,5 +29,5 @@ pytest-asyncio>=0.21.0
 httpx>=0.25.0
 
 # Phase III: AI Chatbot Dependencies
-openai>=1.58.1  # OpenAI SDK for natural language processing (updated for compatibility)
+google-generativeai>=0.3.0  # Gemini SDK for natural language processing (free tier: 1M tokens/month)
 # Note: MCP tools are implemented as internal wrappers, not using external MCP SDK

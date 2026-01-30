@@ -156,7 +156,22 @@ class ResponseFormatterAgent:
             return f"○ Unmarked '{title}' as complete."
 
     def _format_delete_task(self, result: Dict) -> str:
-        """Format delete_task result."""
+        """Format delete_task result (single or batch)."""
+        # Check if this is a batch delete
+        if "deleted_count" in result:
+            deleted_count = result.get("deleted_count", 0)
+            failed_count = result.get("failed_count", 0)
+
+            if deleted_count == 0:
+                return "No completed tasks found to delete. Your task list is clean!"
+
+            response = f"✓ Successfully deleted {deleted_count} completed task(s)."
+            if failed_count > 0:
+                response += f" ({failed_count} task(s) failed to delete)"
+
+            return response
+
+        # Single task deletion
         return "✓ Task deleted successfully. It's been removed from your list."
 
     def _format_update_task(self, result: Dict) -> str:

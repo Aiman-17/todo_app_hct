@@ -4,7 +4,7 @@ Phase III: Chatbot Service for orchestrating AI agents and conversation manageme
 Coordinates the 4-agent pipeline: Intent → Resolution → Action → Formatter.
 Manages conversation state persistence in database.
 """
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
 import logging
@@ -106,8 +106,11 @@ class ChatbotService:
                 }
             )
 
-            # Step 2: Classify intent
-            classification = self.intent_agent.classify(message, user_id, correlation_id)
+            # Step 2: Load conversation history for context (memory)
+            conversation_history = self._load_conversation_history(db, conversation.id)
+
+            # Step 3: Classify intent (with conversation context)
+            classification = self.intent_agent.classify(message, user_id, correlation_id, conversation_history)
             intent = classification.get("intent", "unclear")
             confidence = classification.get("confidence", 0.0)
             entities = classification.get("entities", {})
@@ -133,7 +136,7 @@ class ChatbotService:
                     "success": False
                 }
 
-            # Step 3: Resolve task references (if intent requires task ID)
+            # Step 4: Resolve task references (if intent requires task ID)
             if intent in ["complete_task", "delete_task", "update_task"] and "task_id" not in entities:
                 resolution = self.resolution_agent.resolve(db, user_id, entities, correlation_id)
 
@@ -163,17 +166,17 @@ class ChatbotService:
                         "success": False
                     }
 
-            # Step 4: Execute action via MCP tools
+            # Step 5: Execute action via MCP tools
             tool_result = self.action_agent.execute(
                 db, intent, entities, user_id, correlation_id
             )
 
-            # Step 5: Format response
+            # Step 6: Format response
             response_text = self.formatter_agent.format(
                 intent, tool_result, user_id, correlation_id
             )
 
-            # Step 6: Save conversation messages
+            # Step 7: Save conversation messages
             self._save_messages(db, conversation, user_id, message, response_text, correlation_id)
 
             logger.info(
@@ -207,6 +210,40 @@ class ChatbotService:
                 "success": False,
                 "error": str(e)
             }
+
+    def _load_conversation_history(
+        self,
+        db: Session,
+        conversation_id: UUID,
+        limit: int = 10
+    ) -> List[Message]:
+        """
+        Load recent messages from conversation for context (memory).
+
+        Args:
+            db: Database session
+            conversation_id: Conversation UUID
+            limit: Maximum number of recent messages to load (default: 10)
+
+        Returns:
+            List of Message objects in chronological order
+        """
+        try:
+            statement = select(Message).where(
+                Message.conversation_id == conversation_id,
+                Message.deleted_at.is_(None)
+            ).order_by(Message.created_at.desc()).limit(limit)
+
+            messages = db.exec(statement).all()
+            # Return in chronological order (oldest first)
+            return list(reversed(messages))
+        except Exception as e:
+            logger.error(
+                "ChatbotService: failed to load conversation history",
+                extra={"conversation_id": str(conversation_id), "error": str(e)},
+                exc_info=True
+            )
+            return []  # Return empty list on error (graceful degradation)
 
     def _get_or_create_conversation(
         self,
@@ -299,14 +336,41 @@ class ChatbotService:
 
     def _handle_low_confidence(self, message: str) -> str:
         """Generate response for low-confidence intent classification."""
-        return (
-            "I'm not sure what you want to do. Here are some things you can try:\n"
-            "- 'add a task to [task name]' - Create a new task\n"
-            "- 'show my tasks' - View all your tasks\n"
-            "- 'mark task [number] as done' - Complete a task\n"
-            "- 'delete task [number]' - Remove a task\n"
-            "\nPlease rephrase your request."
-        )
+        msg_lower = message.lower()
+
+        # Provide contextual help based on what they tried
+        if any(word in msg_lower for word in ["mark", "complete", "done", "finish"]):
+            return (
+                "I understand you want to mark a task as complete! Try:\n"
+                "- 'mark task 5 as done'\n"
+                "- 'mark id 20'\n"
+                "- 'complete task buy groceries'\n"
+                "\nTip: First use 'show tasks' to see your task IDs."
+            )
+        elif any(word in msg_lower for word in ["delete", "remove"]):
+            return (
+                "I understand you want to delete a task! Try:\n"
+                "- 'delete task 5'\n"
+                "- 'delete id 20'\n"
+                "- 'delete buy groceries' (by title)\n"
+                "\nNote: To delete multiple tasks, delete them one at a time."
+            )
+        elif any(word in msg_lower for word in ["update", "change", "edit", "modify"]):
+            return (
+                "I understand you want to update a task! Try:\n"
+                "- 'update task 5 to new title'\n"
+                "- 'change buy groceries to buy milk'\n"
+                "\nFirst use 'show tasks' to see your task list."
+            )
+        else:
+            return (
+                "I'm not sure what you want to do. Here are some things you can try:\n"
+                "- 'add a task to [task name]' - Create a new task\n"
+                "- 'show my tasks' or 'view tasks' - View all your tasks\n"
+                "- 'mark id [number]' - Complete a task\n"
+                "- 'delete id [number]' - Remove a task\n"
+                "\nPlease rephrase your request."
+            )
 
     def _format_confirmation_request(self, matches: list) -> str:
         """Format multiple task matches as confirmation request."""
