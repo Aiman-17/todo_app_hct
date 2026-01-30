@@ -20,6 +20,7 @@ import { FilterProvider } from "@/contexts/FilterContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useState, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({
   children,
@@ -28,6 +29,10 @@ export default function DashboardLayout({
 }) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const commandBarRef = useRef<CommandBarRef>(null);
+  const pathname = usePathname();
+
+  // Show floating add button only on dashboard and calendar pages
+  const showFloatingButton = pathname === "/dashboard" || pathname === "/dashboard/calendar";
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -61,8 +66,10 @@ export default function DashboardLayout({
             <main className="p-6">{children}</main>
           </div>
 
-          {/* Floating Add Button */}
-          <FloatingAddButton onClick={() => setShowTaskForm(true)} />
+          {/* Floating Add Button - Only on dashboard and calendar pages */}
+          {showFloatingButton && (
+            <FloatingAddButton onClick={() => setShowTaskForm(true)} />
+          )}
 
           {/* Task Form Modal */}
           {showTaskForm && (
