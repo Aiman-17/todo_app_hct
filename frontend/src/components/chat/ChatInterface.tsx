@@ -271,16 +271,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
           {message.content}
         </div>
-        {message.intent && (
-          <div className={cn(
-            "text-xs mt-2 pt-2 border-t",
-            isUser ? "border-rose-white/20" : "border-seal-brown/10"
-          )}>
-            <span className={isUser ? "text-rose-white/80" : "text-seal-brown/60"}>
-              {message.success ? '✓' : '⚠️'} {message.intent.replace('_', ' ')}
-            </span>
-          </div>
-        )}
+        {/* Debug info removed for natural conversation flow */}
       </div>
 
       {isUser && (
