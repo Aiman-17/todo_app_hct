@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Trash2, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { apiRequest } from '@/lib/api'
 import type { Task } from '@/types/task'
 
 interface TaskPanelProps {
@@ -34,25 +35,7 @@ export function TaskPanel({ refreshTrigger, onTaskAction }: TaskPanelProps) {
       setLoading(true)
       setError(null)
 
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error('Not authenticated')
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/tasks`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks')
-      }
-
-      const data = await response.json()
+      const data = await apiRequest<Task[]>('/api/tasks')
       setTasks(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks')
@@ -69,22 +52,9 @@ export function TaskPanel({ refreshTrigger, onTaskAction }: TaskPanelProps) {
   // Toggle task completion
   const handleToggle = async (taskId: number) => {
     try {
-      const token = localStorage.getItem('auth_token')
-      if (!token) return
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/tasks/${taskId}/toggle`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to toggle task')
-      }
+      await apiRequest(`/api/tasks/${taskId}/toggle`, {
+        method: 'PATCH'
+      })
 
       // Update local state
       setTasks(prev =>
@@ -104,22 +74,9 @@ export function TaskPanel({ refreshTrigger, onTaskAction }: TaskPanelProps) {
     if (!confirm('Delete this task?')) return
 
     try {
-      const token = localStorage.getItem('auth_token')
-      if (!token) return
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/tasks/${taskId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to delete task')
-      }
+      await apiRequest(`/api/tasks/${taskId}`, {
+        method: 'DELETE'
+      })
 
       // Remove from local state
       setTasks(prev => prev.filter(task => task.id !== taskId))
