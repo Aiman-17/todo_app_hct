@@ -14,6 +14,7 @@ from src.mcp.task_tools import (
     delete_task,
     update_task
 )
+from src.agents.task_resolution import TaskResolutionAgent
 
 logger = logging.getLogger("mcp_tools")
 
@@ -41,8 +42,8 @@ class ActionAgent:
     """
 
     def __init__(self):
-        """Initialize action agent."""
-        pass
+        """Initialize action agent with task resolution."""
+        self.task_resolver = TaskResolutionAgent()
 
     def execute(
         self,
@@ -136,11 +137,13 @@ class ActionAgent:
 
     def _execute_list_tasks(self, db: Session, params: Dict, user_id: str, correlation_id: str) -> Dict:
         """Execute list_tasks MCP tool."""
-        # Parse status filter
+        # Parse status filter (check both 'completed' and 'filter_completed' for compatibility)
         status = "all"
-        if params.get("completed") is True:
+        completed_filter = params.get("completed") or params.get("filter_completed")
+
+        if completed_filter is True:
             status = "completed"
-        elif params.get("completed") is False:
+        elif completed_filter is False:
             status = "pending"
 
         return list_tasks(
@@ -155,8 +158,28 @@ class ActionAgent:
 
     def _execute_complete_task(self, db: Session, params: Dict, user_id: str, correlation_id: str) -> Dict:
         """Execute complete_task MCP tool."""
-        # Validate task_id
+        # Try to get task_id directly
         task_id = params.get("task_id")
+
+        # If no task_id, try to resolve task reference
+        if not task_id and params.get("task_reference"):
+            resolution = self.task_resolver.resolve(db, user_id, params, correlation_id)
+
+            if resolution.get("error"):
+                return {"success": False, "error": resolution["error"]}
+
+            if resolution.get("confirmation_needed"):
+                matches = resolution.get("matches", [])
+                task_list = "\n".join([f"{i+1}. {t['title']} (ID: {t['id']})" for i, t in enumerate(matches)])
+                return {
+                    "success": False,
+                    "error": f"Multiple tasks found. Please specify which one:\n{task_list}"
+                }
+
+            task_ids = resolution.get("task_ids", [])
+            if task_ids:
+                task_id = task_ids[0]
+
         if not task_id:
             return {"success": False, "error": "Task ID is required to mark as complete"}
 
@@ -230,6 +253,26 @@ class ActionAgent:
 
         # Single task deletion
         task_id = params.get("task_id")
+
+        # If no task_id, try to resolve task reference
+        if not task_id and params.get("task_reference"):
+            resolution = self.task_resolver.resolve(db, user_id, params, correlation_id)
+
+            if resolution.get("error"):
+                return {"success": False, "error": resolution["error"]}
+
+            if resolution.get("confirmation_needed"):
+                matches = resolution.get("matches", [])
+                task_list = "\n".join([f"{i+1}. {t['title']} (ID: {t['id']})" for i, t in enumerate(matches)])
+                return {
+                    "success": False,
+                    "error": f"Multiple tasks found. Please specify which one:\n{task_list}"
+                }
+
+            task_ids = resolution.get("task_ids", [])
+            if task_ids:
+                task_id = task_ids[0]
+
         if not task_id:
             return {"success": False, "error": "Task ID is required to delete"}
 

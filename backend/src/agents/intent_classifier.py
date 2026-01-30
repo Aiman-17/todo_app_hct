@@ -91,6 +91,7 @@ PERSONALITY:
 - Be conversational and helpful
 - Understand typos and informal language
 - Users make mistakes - interpret intent, not exact spelling
+- Be flexible with phrasing - extract the core meaning
 
 TYPO EXAMPLES:
 - "mkr tsk 5 complet" → mark task 5 complete
@@ -99,15 +100,21 @@ TYPO EXAMPLES:
 - "dlete teh first one" → delete the first task
 
 Classify user messages into one of these intents:
-- create_task: User wants to create a new task
+- create_task: User wants to create a new task (even with bulk requests like "create 5 tasks")
 - list_tasks: User wants to view their tasks (show, list, display, view)
 - update_task: User wants to modify an existing task
-- delete_task: User wants to delete/remove a task (single or batch)
+- delete_task: User wants to delete/remove a task by ID or reference
 - complete_task: User wants to mark a task as done/complete
 - unclear: Intent cannot be determined
 
+IMPORTANT RULES:
+1. For "delete all completed tasks" or "delete completed tasks" → use list_tasks intent with filter_completed=true
+   (Show user the list first, they can confirm deletion after seeing it)
+2. For "create N tasks" → extract the full description as title (e.g., "5 tasks for my daily routine")
+3. For task references without ID → set task_reference to the descriptive text
+
 Extract relevant entities:
-- title: Task title/description
+- title: Task title/description (for create_task, extract FULL description even if it includes numbers like "5 tasks for...")
 - priority: high, medium, or low
 - due_date: Date/time mentioned (in ISO format if possible)
 - task_id: Numeric task ID if mentioned in ANY format:
@@ -117,7 +124,10 @@ Extract relevant entities:
   * "number 3" → 3
   * "#42" → 42
   * "id20" → 20
-- task_reference: Text reference to a task (e.g., "the grocery one", "first task", "it", "that")
+  * "task3" → 3
+- task_reference: Text reference to a task (e.g., "sss", "the grocery one", "first task", "it", "that")
+  * If user says "delete task sss" → task_reference = "sss"
+  * If user says "delete id3" → task_id = 3 (NOT task_reference)
 - completed: true/false for completion status (use for filtering in list_tasks or batch delete)
 - tags: List of tags mentioned
 - filter_completed: true if user wants to filter by completed status (e.g., "completed tasks", "done tasks")
@@ -141,21 +151,24 @@ Confidence scoring:
 
 Examples:
 "remind me to call mom" -> {"intent": "create_task", "confidence": 0.95, "entities": {"title": "call mom"}}
+"create 5 tasks for my daily routine" -> {"intent": "create_task", "confidence": 0.9, "entities": {"title": "5 tasks for my daily routine"}}
+"add task take a shower tomorrow" -> {"intent": "create_task", "confidence": 0.9, "entities": {"title": "take a shower", "due_date": "2026-01-30"}}
+"add task to take a shower tomorrow" -> {"intent": "create_task", "confidence": 0.9, "entities": {"title": "take a shower", "due_date": "2026-01-30"}}
+"create task take a shower to morrow" -> {"intent": "create_task", "confidence": 0.85, "entities": {"title": "take a shower", "due_date": "2026-01-30"}}
+"add new task" -> {"intent": "unclear", "confidence": 0.3, "entities": {}, "note": "No task title provided"}
 "show my tasks" -> {"intent": "list_tasks", "confidence": 1.0, "entities": {}}
-"view tasks" -> {"intent": "list_tasks", "confidence": 1.0, "entities": {}}
+"list tasks" -> {"intent": "list_tasks", "confidence": 1.0, "entities": {}}
 "mark task 5 as done" -> {"intent": "complete_task", "confidence": 0.98, "entities": {"task_id": 5}}
 "mark id 20" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_id": 20}}
 "mark task id20" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_id": 20}}
-"marks id 20 tasks as completed" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_id": 20}}
-"delete completed tasks" -> {"intent": "list_tasks", "confidence": 0.9, "entities": {"filter_completed": true}, "note": "User wants completed tasks, likely to delete them - show list first"}
-"delete all done tasks" -> {"intent": "list_tasks", "confidence": 0.9, "entities": {"filter_completed": true}}
+"delete all completed tasks" -> {"intent": "list_tasks", "confidence": 0.9, "entities": {"filter_completed": true}}
+"delete completed tasks" -> {"intent": "list_tasks", "confidence": 0.9, "entities": {"filter_completed": true}}
 "delete id4" -> {"intent": "delete_task", "confidence": 0.98, "entities": {"task_id": 4}}
-"delete aaa" -> {"intent": "delete_task", "confidence": 0.95, "entities": {"task_reference": "aaa"}}
-"what you updated in do chat page update task?" -> {"intent": "list_tasks", "confidence": 0.8, "entities": {"task_reference": "do chat page update"}, "note": "User wants to see task details"}
-"update do chat page update task" -> {"intent": "update_task", "confidence": 0.85, "entities": {"task_reference": "do chat page update"}}
+"delete task3" -> {"intent": "delete_task", "confidence": 0.98, "entities": {"task_id": 3}}
+"delete task sss" -> {"intent": "delete_task", "confidence": 0.95, "entities": {"task_reference": "sss"}}
+"delte 3 task" -> {"intent": "delete_task", "confidence": 0.85, "entities": {"task_id": 3}}
 "hey" -> {"intent": "unclear", "confidence": 0.1, "entities": {}}
-"h" -> {"intent": "unclear", "confidence": 0.1, "entities": {}}
-"mark it complete" (after creating task) -> {"intent": "complete_task", "confidence": 0.85, "entities": {"task_reference": "it"}}"""
+"h" -> {"intent": "unclear", "confidence": 0.1, "entities": {}}"""
 
                 # Build conversation context for Gemini
                 conversation_content = system_prompt + "\n\n"

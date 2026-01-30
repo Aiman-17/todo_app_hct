@@ -153,14 +153,16 @@ class RuleBasedClassifier:
                 return entities
 
         # Extract numeric task ID (various formats)
-        # "task 5", "id 20", "task id20", "#42", "task20"
+        # "task 5", "id 20", "task id20", "#42", "task20", "task3"
         patterns = [
             r'\bid\s*(\d+)',           # "id 20", "id20"
             r'\btask\s*id\s*(\d+)',    # "task id 20", "task id20"
             r'\btask\s+(\d+)',         # "task 5", "task 20"
             r'\bnumber\s+(\d+)',       # "number 3"
             r'#(\d+)',                 # "#42"
-            r'\btask(\d+)',            # "task20"
+            r'\btask(\d+)',            # "task20", "task3"
+            r'\bid(\d+)',              # "id20", "id3"
+            r'(\d+)\s+task',           # "3 task", "5 task"
         ]
 
         for pattern in patterns:
@@ -191,13 +193,13 @@ class RuleBasedClassifier:
 
         # Extract title (text after "add task", "create", "remind me to", etc.)
         patterns = [
-            r'add\s+(?:a\s+)?task\s+(?:to\s+)?(.+)',
-            r'add\s+(?:a\s+)?task\s+(.+)',
-            r'create\s+(?:a\s+)?task\s+(?:to\s+)?(.+)',
-            r'remind\s+me\s+to\s+(.+)',
+            r'add\s+(?:a\s+|new\s+)?task\s+(?:to\s+)?(.+)',  # "add task", "add a task", "add new task", "add task to X"
+            r'create\s+(?:a\s+|new\s+)?(?:\d+\s+)?task(?:s)?\s+(?:for\s+|to\s+)?(.+)',  # "create task", "create 5 tasks for X"
+            r'make\s+(?:a\s+|new\s+|\d+\s+)?task(?:s)?\s+(?:for\s+|to\s+)?(.+)',  # "make task", "make 5 tasks for X"
+            r'remind\s+me\s+to\s+(.+)',  # "remind me to X"
             r'new\s+task(?:s)?\s+(?:for\s+)?(.+)',  # "new tasks for X"
-            r'make\s+(?:new\s+)?task(?:s)?\s+(?:for\s+)?(.+)',  # "make new tasks for X"
-            r'make\s+(?:a\s+)?task\s+(?:to\s+)?(.+)',
+            r'add\s+new\s+task\s*(?::\s*)?(.+)',  # "add new task: X" or "add new task X"
+            r'(?:add|create)\s+(?:task\s+)?(.+)',  # Fallback: "add X", "create X" (very flexible)
         ]
 
         title_text = ""
@@ -205,7 +207,9 @@ class RuleBasedClassifier:
             match = re.search(pattern, msg, re.IGNORECASE)
             if match:
                 title_text = match.group(1).strip()
-                break
+                # Skip if extracted text is too short or just a number
+                if len(title_text) > 2 and not title_text.isdigit():
+                    break
 
         # Clean up title (remove date, tag, priority keywords)
         if title_text:
