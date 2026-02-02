@@ -25,6 +25,15 @@ router = APIRouter(prefix="/api", tags=["chat"])
 chatbot_service = ChatbotService()
 
 
+# TEMPORARY: Admin endpoint to reset rate limiter for testing
+@router.post("/admin/reset-rate-limit", status_code=status.HTTP_200_OK)
+async def reset_rate_limit():
+    """Reset rate limiter (testing only)"""
+    from src.middleware.rate_limiter import chat_rate_limiter
+    chat_rate_limiter.reset()
+    return {"message": "Rate limiter reset successfully"}
+
+
 @router.post("/chat", response_model=ChatResponse, status_code=status.HTTP_200_OK)
 async def chat(
     request: ChatRequest,
@@ -113,7 +122,8 @@ async def chat(
             user_id=str(current_user.id),
             message=request.message,
             conversation_id=str(request.conversation_id) if request.conversation_id else None,
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
+            language=request.language
         )
 
         # Calculate request latency

@@ -2,12 +2,28 @@
 
 A modern, full-stack todo application with **AI-powered branding** and **premium UI design**. Built progressively from console CLI to production-grade web application with authentication, advanced features, and beautiful user interface.
 
-## Current Status: Phase II + UI Enhancements ✅
+## Current Status: Phase III - AI Chatbot + Voice Commands ✅
 
-**Status**: ✅ **Complete** (230+ tasks - Core features + Premium UI)
-**Stack**: FastAPI + SQLModel + Neon PostgreSQL (backend) | Next.js 16+ + React 19 + TypeScript + Tailwind + shadcn/ui (frontend)
-**Completion Date**: January 6, 2026
+**Status**: ✅ **Complete** (310+ tasks - Core features + Premium UI + AI Chatbot + Voice Commands)
+**Stack**: FastAPI + SQLModel + Neon PostgreSQL (backend) | Next.js 16+ + React 19 + TypeScript + Tailwind + shadcn/ui (frontend) | Google Gemini 2.0 Flash Lite (AI)
+**Completion Date**: January 30, 2026
 **Live Demo**: [AI TaskMaster](http://localhost:3005) (Development)
+
+### 🎤 Voice Commands (NEW!)
+Talk to your AI assistant using voice input:
+- Click the microphone button in chat
+- Speak naturally: "Add task buy groceries tomorrow"
+- Automatic transcription and execution
+- Works in Chrome, Edge, Safari (WebKit)
+- Real-time visual feedback during recording
+
+### 🌐 Multi-Language Support: Urdu (NEW!)
+Get chatbot responses in Urdu:
+- Toggle between English and اردو in the chat interface
+- Full Urdu responses for all task operations
+- Supports create, list, update, delete, complete tasks
+- Native Urdu typography with proper font rendering
+- Seamless language switching mid-conversation
 
 ### Phase II Quick Start
 
@@ -138,6 +154,292 @@ npm run dev
 - [Manual Testing Guide](MANUAL_TESTING.md) - 35+ test cases for manual QA
 - [API Documentation](http://localhost:8000/docs) - Interactive Swagger UI (when running)
 - [ADRs](history/adr/) - Architecture Decision Records
+
+---
+
+## 🤖 Reusable Intelligence - AI Agent Architecture
+
+AI TaskMaster implements a **modular, reusable AI agent system** using the **4-Agent Pipeline Pattern** for natural language processing. This architecture demonstrates **Reusable Intelligence** through Claude Code Subagents that can be extended, replaced, and reused across different contexts.
+
+### Agent Architecture Overview
+
+```
+User Message → IntentClassifierAgent → TaskResolutionAgent → ActionAgent → ResponseFormatterAgent → Response
+```
+
+**Key Components**:
+
+1. **IntentClassifierAgent** (`backend/src/agents/intent_classifier.py`)
+   - Classifies user messages into structured intents (create, list, update, delete, complete)
+   - Extracts entities (task title, priority, due date, tags)
+   - Uses Google Gemini 2.0 Flash Lite with rule-based fallback
+   - Handles typo normalization and low-confidence scenarios
+
+2. **TaskResolutionAgent** (`backend/src/agents/task_resolution.py`)
+   - Resolves ambiguous task references ("the grocery one", "first task")
+   - Implements word-overlap fuzzy matching algorithm
+   - Handles confirmation flow for multiple matches
+
+3. **ActionAgent** (`backend/src/agents/action_agent.py`)
+   - Routes intents to appropriate MCP tools
+   - Executes CRUD operations with user isolation
+   - Validates parameters and handles errors
+
+4. **ResponseFormatterAgent** (`backend/src/agents/response_formatter.py`)
+   - Formats responses in natural language
+   - Provides context-aware, helpful messages
+   - Supports emoji and structured metadata
+
+### Why Reusable Intelligence?
+
+✅ **Modular**: Each agent has a single, well-defined responsibility
+✅ **Composable**: Agents can be combined in different pipelines
+✅ **Portable**: Same agents work across web, CLI, mobile, voice
+✅ **Extensible**: Easy to add capabilities without breaking existing code
+✅ **Testable**: Each agent can be tested in isolation
+✅ **Swappable**: Replace Gemini with OpenAI, Anthropic, etc.
+
+### Example: Agent Reusability
+
+```python
+# Web API
+@router.post("/chat")
+async def chat(request: ChatRequest):
+    service = ChatbotService()
+    return service.process_message(db, user_id, request.message)
+
+# CLI Application
+def main():
+    service = ChatbotService()  # Same agents!
+    response = service.process_message(db, user_id, input("You: "))
+
+# Slack Bot
+@app.event("message")
+def handle_message(event, say):
+    service = ChatbotService()  # Same agents!
+    say(service.process_message(db, event["user"], event["text"])["response"])
+```
+
+### Documentation
+
+- 📚 [Agent Architecture](docs/agents-architecture.md) - Detailed technical architecture, agent responsibilities, and pipeline flow
+- 🔧 [Reusable Intelligence Guide](docs/reusable-intelligence.md) - Design patterns, implementation examples, and best practices for reusing agents
+
+### Agent Features
+
+- **Natural Language Understanding**: "Buy milk", "I need to remember", "Show pending tasks"
+- **Typo Tolerance**: "shw my tsks" → "show my tasks"
+- **Fuzzy Task Matching**: "grocery" matches "Buy groceries at store"
+- **Context-Aware**: Maintains conversation history for better understanding
+- **Fallback Strategy**: Graceful degradation when AI API unavailable
+- **Distributed Tracing**: Correlation IDs for debugging across agent pipeline
+
+---
+
+## 🎤 Voice Commands - Hands-Free Task Management
+
+AI TaskMaster supports **voice input** for natural, hands-free task management using the **Web Speech API**.
+
+### How It Works
+
+```
+User clicks mic → Browser Speech API → Transcription → Chat API → AI Response
+```
+
+**Features:**
+- ✅ **Natural Speech Recognition**: Speak naturally, no keywords required
+- ✅ **Auto-Send**: Transcribed text automatically sent to chatbot
+- ✅ **Real-Time Feedback**: Visual indicators during recording
+- ✅ **Error Handling**: Clear error messages for permissions, connectivity
+- ✅ **Multi-Language**: Supports 11 languages (English, Spanish, French, German, Japanese, Chinese, Arabic, Urdu, etc.)
+- ✅ **Browser Compatibility**: Chrome, Edge (full support), Safari (WebKit)
+
+### Usage
+
+1. **Click the microphone button** in the chat interface
+2. **Grant microphone permission** (browser will prompt on first use)
+3. **Speak your command**: "Add a high priority task to call the doctor tomorrow"
+4. **Wait for transcription** (real-time visual feedback)
+5. **Message auto-sends** and chatbot responds
+
+### Example Voice Commands
+
+| Command | Result |
+|---------|--------|
+| "Add task buy groceries" | Creates task: "buy groceries" |
+| "Show my high priority tasks" | Lists all high priority tasks |
+| "Mark task five as complete" | Completes task with ID 5 |
+| "Delete the grocery task" | Deletes matching task |
+| "What are my pending tasks" | Lists all incomplete tasks |
+
+### Implementation Details
+
+**Frontend Components:**
+- `VoiceButton.tsx` - Microphone button with recording state
+- `useSpeechRecognition.ts` - React hook for speech API
+- `speech-recognition.ts` - Web Speech API wrapper with error handling
+
+**Features:**
+- **Permission Management**: Automatic permission request flow
+- **Visual Feedback**: Pulsing animation during recording, listening indicator
+- **Error Recovery**: Retry button for failed recordings
+- **Graceful Fallback**: Hidden on unsupported browsers
+
+**Browser Support:**
+| Browser | Support | Notes |
+|---------|---------|-------|
+| Chrome | ✅ Full | Best experience |
+| Edge | ✅ Full | Same as Chrome |
+| Safari | ✅ WebKit | Requires user interaction |
+| Firefox | ⚠️ Limited | Requires about:config flag |
+
+### Privacy & Security
+
+- ✅ **No cloud storage**: Speech processed by browser, not stored
+- ✅ **Permission-based**: Requires explicit microphone permission
+- ✅ **User control**: Stop recording anytime
+- ✅ **Local processing**: Transcription via browser's built-in API
+
+---
+
+## ☁️ Cloud-Native Blueprints - Kubernetes & Docker
+
+AI TaskMaster is built with a **cloud-native architecture** supporting deployment across multiple environments using **Kubernetes**, **Docker Compose**, and **serverless platforms**.
+
+### Architecture Overview
+
+```
+Load Balancer (NGINX Ingress)
+    ↓
+┌────────────────────────────────────────┐
+│  Frontend (Next.js)  │  Backend (FastAPI) │
+│  - 2 replicas        │  - 3 replicas       │
+│  - Auto-scaling      │  - Auto-scaling     │
+│  - Health checks     │  - Health checks    │
+└────────────────────────────────────────┘
+    ↓
+Neon Serverless PostgreSQL
+```
+
+### Claude Code Agent Skills
+
+Interactive automation skills for deployment and testing:
+
+**`.claude-skills/deploy.md`** - Full deployment automation
+- Pre-deployment checks (tests, linting, migrations)
+- Environment-specific deployment (local/staging/production)
+- Post-deployment verification and smoke tests
+- Automatic rollback on failure
+
+**`.claude-skills/test-chatbot.md`** - AI agent testing
+- Unit tests for all 4 agents
+- Integration tests for agent pipeline
+- End-to-end conversation flow tests
+- Performance testing (<5s SLA validation)
+
+**`.claude-skills/k8s-deploy.md`** - Kubernetes helper
+- Interactive deployment workflows
+- Scaling operations (manual and auto-scaling)
+- Troubleshooting guide for common issues
+- Health monitoring and log management
+
+### Kubernetes Deployment
+
+**Production-ready manifests:**
+```bash
+kubernetes/
+├── namespace.yaml           # Isolated namespace
+├── backend-deployment.yaml  # 3 replicas, rolling updates
+├── frontend-deployment.yaml # 2 replicas, auto-scaling
+└── ingress.yaml             # SSL/TLS, load balancing
+```
+
+**Features:**
+- ✅ **High Availability**: Multi-replica deployments (3 backend, 2 frontend)
+- ✅ **Auto-Scaling**: HPA (2-10 replicas based on CPU)
+- ✅ **Zero-Downtime**: Rolling updates with health checks
+- ✅ **Self-Healing**: Automatic pod restart on failure
+- ✅ **Load Balancing**: Traffic distribution across replicas
+- ✅ **Resource Management**: CPU/memory limits and requests
+- ✅ **Health Checks**: Liveness and readiness probes
+
+**Quick Deploy:**
+```bash
+# Deploy to Kubernetes
+kubectl apply -f kubernetes/
+
+# Verify deployment
+kubectl get pods -n ai-taskmaster
+kubectl rollout status deployment/backend -n ai-taskmaster
+
+# Access application
+kubectl port-forward -n ai-taskmaster svc/frontend-service 3000:3000
+```
+
+### Docker Compose (Local Development)
+
+**One-command setup:**
+```bash
+docker-compose up
+```
+
+**Services:**
+- `postgres` - PostgreSQL 16 with health checks
+- `backend` - FastAPI with hot-reload
+- `frontend` - Next.js with hot-reload
+- `nginx` - Reverse proxy (optional)
+
+**Features:**
+- ✅ Consistent development environment
+- ✅ Hot module replacement (HMR)
+- ✅ Volume mounting for live code changes
+- ✅ Network isolation
+- ✅ Health checks and dependencies
+
+### Cloud-Native Patterns
+
+**12-Factor App Compliance:**
+- Codebase in version control
+- Dependencies explicitly declared
+- Config via environment variables
+- Backing services as attached resources
+- Stateless processes
+- Port binding for services
+- Horizontal scalability
+- Fast startup and graceful shutdown
+- Dev/prod parity
+- Logs as event streams
+- Admin processes as one-off tasks
+
+**Container Security:**
+- Minimal base images (python:3.13-slim, node:20-alpine)
+- Non-root user execution
+- Secret management via Kubernetes Secrets
+- Image vulnerability scanning
+- Network policies for pod isolation
+
+**Observability:**
+- Structured logging with correlation IDs
+- Health check endpoints (/health)
+- Metrics collection (CPU, memory, latency)
+- Distributed tracing across agent pipeline
+- Ready for Prometheus + Grafana
+
+### Documentation
+
+- 🏗️ [Cloud-Native Architecture](docs/cloud-native-architecture.md) - Complete system design, deployment strategies, monitoring, and disaster recovery
+- 📦 [Kubernetes Manifests](kubernetes/) - Production-ready K8s configuration
+- 🐳 [Docker Compose](docker-compose.yml) - Local development environment
+- 🚀 [Deploy Skill](.claude-skills/deploy.md) - Automated deployment workflows
+- ☸️ [K8s Deploy Skill](.claude-skills/k8s-deploy.md) - Interactive Kubernetes helper
+
+### Deployment Targets
+
+| Environment | Platform | Replicas | Resources | Cost |
+|-------------|----------|----------|-----------|------|
+| **Local** | Docker Compose | 1 each | Minimal | Free |
+| **Staging** | Kubernetes | 2-5 | Medium | ~$50/mo |
+| **Production** | Kubernetes | 3-10 | High | ~$200/mo |
 
 ---
 

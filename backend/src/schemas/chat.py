@@ -36,6 +36,12 @@ class ChatRequest(BaseModel):
         description="UUID of existing conversation (null for new conversation)",
         examples=[None, "550e8400-e29b-41d4-a716-446655440000"]
     )
+    language: str = Field(
+        default="en",
+        pattern="^(en|ur)$",
+        description="Response language (en=English, ur=Urdu)",
+        examples=["en", "ur"]
+    )
 
     model_config = ConfigDict(
         json_schema_extra={

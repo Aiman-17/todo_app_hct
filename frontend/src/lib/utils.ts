@@ -14,7 +14,7 @@ export function cn(...inputs: ClassValue[]) {
  * @param error - Error object from API request
  * @returns User-friendly error message string
  */
-export function handleApiError(error: any): string {
+export function handleApiError(error: unknown): string {
   // Handle network errors (fetch failures)
   if (error instanceof TypeError && error.message.includes('fetch')) {
     return "Unable to connect to server. Please check your connection and try again.";
@@ -27,7 +27,7 @@ export function handleApiError(error: any): string {
     }
     if (Array.isArray(error.detail) && error.detail.length > 0) {
       // Validation errors from Pydantic
-      return error.detail.map((err: any) => err.msg).join(', ');
+      return error.detail.map((err: { msg: string }) => err.msg).join(', ');
     }
   }
 

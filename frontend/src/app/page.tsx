@@ -446,7 +446,7 @@ export default function HomePage() {
                 We combine cutting-edge AI technology with beautiful, intuitive design to help individuals and teams achieve more. Our platform learns from your habits, suggests optimal workflows, and automates the tedious parts of task management.
               </p>
               <p className="text-lg text-seal-brown/70 mb-8">
-                Whether you're managing personal projects, coordinating a team, or running a business, AI TaskMaster adapts to your needs and grows with you.
+                Whether you&apos;re managing personal projects, coordinating a team, or running a business, AI TaskMaster adapts to your needs and grows with you.
               </p>
 
               <div className="space-y-4">

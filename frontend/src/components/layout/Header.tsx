@@ -8,7 +8,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { isAuthenticated, clearTokens, apiRequest } from "@/lib/api";
@@ -30,7 +30,7 @@ export function Header() {
         try {
           const userData = await apiRequest<User>("/api/auth/profile");
           setUser(userData);
-        } catch (error) {
+        } catch {
           // Token expired or invalid - clear tokens
           clearTokens();
           setUser(null);

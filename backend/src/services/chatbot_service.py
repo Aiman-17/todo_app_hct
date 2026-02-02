@@ -56,7 +56,8 @@ class ChatbotService:
         user_id: str,
         message: str,
         conversation_id: Optional[str] = None,
-        correlation_id: Optional[str] = None
+        correlation_id: Optional[str] = None,
+        language: str = "en"
     ) -> Dict[str, Any]:
         """
         Process user message through agent pipeline and return response.
@@ -173,7 +174,7 @@ class ChatbotService:
 
             # Step 6: Format response
             response_text = self.formatter_agent.format(
-                intent, tool_result, user_id, correlation_id
+                intent, tool_result, user_id, correlation_id, language
             )
 
             # Step 7: Save conversation messages

@@ -40,7 +40,7 @@ export class APIError extends Error {
   constructor(
     message: string,
     public status: number,
-    public response?: any
+    public response?: unknown
   ) {
     super(message);
     this.name = 'APIError';
@@ -93,7 +93,7 @@ export async function apiRequest<T>(
     });
 
     // Parse response body (skip for 204 No Content)
-    let data: any;
+    let data: unknown;
     if (response.status === 204) {
       // 204 No Content - no body to parse
       data = null;
@@ -124,7 +124,7 @@ export async function apiRequest<T>(
 
           // Retry the original request with new token (only once)
           return apiRequest<T>(endpoint, options, retryCount + 1);
-        } catch (refreshError) {
+        } catch {
           // Refresh failed, clear tokens and redirect
           clearTokens();
           if (typeof window !== 'undefined') {

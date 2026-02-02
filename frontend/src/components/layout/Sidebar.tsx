@@ -12,7 +12,7 @@
  * - Responsive: hidden on mobile with hamburger menu toggle
  */
 
-import { Home, CheckSquare, Calendar, Settings, MessageCircle, LogOut, Menu, X } from "lucide-react";
+import { Home, Calendar, Settings, MessageCircle, LogOut, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { clearTokens } from "@/lib/api";

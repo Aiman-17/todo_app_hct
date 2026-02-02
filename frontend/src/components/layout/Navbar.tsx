@@ -33,7 +33,7 @@ export function Navbar() {
         try {
           const userData = await apiRequest<UserType>("/api/auth/profile");
           setUser(userData);
-        } catch (error) {
+        } catch {
           // Token expired or invalid - clear tokens
           clearTokens();
           setUser(null);

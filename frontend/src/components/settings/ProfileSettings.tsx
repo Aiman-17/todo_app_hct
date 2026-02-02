@@ -31,7 +31,7 @@ export function ProfileSettings() {
         const userData = await apiRequest<UserType>("/api/auth/profile");
         setUser(userData);
         setName(userData.name);
-      } catch (error) {
+      } catch {
         toast({
           title: "Failed to load profile",
           description: "Please try refreshing the page",
@@ -43,7 +43,7 @@ export function ProfileSettings() {
     };
 
     fetchProfile();
-  }, []);
+  }, [toast]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,10 +64,10 @@ export function ProfileSettings() {
       if (user) {
         setUser({ ...user, name });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to update profile",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     } finally {
@@ -116,10 +116,10 @@ export function ProfileSettings() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to change password",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     } finally {

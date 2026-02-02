@@ -50,10 +50,10 @@ export function TaskItem({ task, onDeleted, onToggled }: TaskItemProps) {
       });
 
       onToggled(task.id);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to update task",
-        description: error.message || "An error occurred",
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }
@@ -93,10 +93,10 @@ export function TaskItem({ task, onDeleted, onToggled }: TaskItemProps) {
 
       setIsEditing(false);
       window.dispatchEvent(new CustomEvent("taskUpdated"));
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to update task",
-        description: error.message || "An error occurred",
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     } finally {
@@ -134,10 +134,10 @@ export function TaskItem({ task, onDeleted, onToggled }: TaskItemProps) {
 
       onDeleted(task.id);
       setShowDeleteModal(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to delete task",
-        description: error.message || "An error occurred",
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }

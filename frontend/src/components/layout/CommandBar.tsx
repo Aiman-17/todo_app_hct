@@ -23,7 +23,7 @@ export interface CommandBarRef {
   toggleSort: () => void;
 }
 
-export const CommandBar = forwardRef<CommandBarRef, {}>((props, ref) => {
+export const CommandBar = forwardRef<CommandBarRef, Record<string, never>>((props, ref) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const {
     filters,
@@ -81,10 +81,6 @@ export const CommandBar = forwardRef<CommandBarRef, {}>((props, ref) => {
 
   const handleSortChange = (sortBy: "created_at" | "due_date" | "priority" | "updated_at") => {
     setSortBy(sortBy);
-  };
-
-  const handleOrderToggle = () => {
-    setOrder(filters.order === "asc" ? "desc" : "asc");
   };
 
   const handleResetFilters = () => {

@@ -100,12 +100,18 @@ TYPO EXAMPLES:
 - "dlete teh first one" → delete the first task
 
 Classify user messages into one of these intents:
-- create_task: User wants to create a new task (even with bulk requests like "create 5 tasks")
-- list_tasks: User wants to view their tasks (show, list, display, view)
+- create_task: User wants to create a new task
+  * Explicit: "add task", "create task", "new task", "remind me"
+  * Natural: "Buy milk", "Call mom", "I need to remember to X"
+  * Short imperatives without keywords count as create_task (e.g., "Buy groceries", "Clean room")
+- list_tasks: User wants to view their tasks
+  * Explicit: "show tasks", "list tasks", "view tasks"
+  * Natural: "What's pending", "Whats my tasks", "What do I need to do"
+  * Questions about tasks count as list_tasks
 - update_task: User wants to modify an existing task
 - delete_task: User wants to delete/remove a task by ID or reference
 - complete_task: User wants to mark a task as done/complete
-- unclear: Intent cannot be determined
+- unclear: Intent cannot be determined (only use this when truly ambiguous)
 
 IMPORTANT RULES:
 1. For "delete all completed tasks" or "delete completed tasks" → use list_tasks intent with filter_completed=true
@@ -154,12 +160,17 @@ Confidence scoring:
 
 Examples:
 "remind me to call mom" -> {"intent": "create_task", "confidence": 0.95, "entities": {"title": "call mom"}}
+"Buy milk" -> {"intent": "create_task", "confidence": 0.9, "entities": {"title": "Buy milk"}}
+"I need to remember to pay bills" -> {"intent": "create_task", "confidence": 0.9, "entities": {"title": "pay bills"}}
 "create 5 tasks for my daily routine" -> {"intent": "create_task", "confidence": 0.9, "entities": {"title": "5 tasks for my daily routine"}}
 "add task take a shower tomorrow" -> {"intent": "create_task", "confidence": 0.9, "entities": {"title": "take a shower", "due_date": "2026-01-30"}}
 "add task to take a shower tomorrow" -> {"intent": "create_task", "confidence": 0.9, "entities": {"title": "take a shower", "due_date": "2026-01-30"}}
 "create task take a shower to morrow" -> {"intent": "create_task", "confidence": 0.85, "entities": {"title": "take a shower", "due_date": "2026-01-30"}}
 "add new task" -> {"intent": "unclear", "confidence": 0.3, "entities": {}, "note": "No task title provided"}
 "show my tasks" -> {"intent": "list_tasks", "confidence": 1.0, "entities": {}}
+"shw my tsks" -> {"intent": "list_tasks", "confidence": 0.85, "entities": {}}
+"Whats pending" -> {"intent": "list_tasks", "confidence": 0.9, "entities": {}}
+"what are my pending tasks" -> {"intent": "list_tasks", "confidence": 1.0, "entities": {}}
 "list tasks" -> {"intent": "list_tasks", "confidence": 1.0, "entities": {}}
 "mark task 5 as done" -> {"intent": "complete_task", "confidence": 0.98, "entities": {"task_id": 5}}
 "mark id 20" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_id": 20}}
@@ -169,6 +180,8 @@ Examples:
 "delete id4" -> {"intent": "delete_task", "confidence": 0.98, "entities": {"task_id": 4}}
 "delete task3" -> {"intent": "delete_task", "confidence": 0.98, "entities": {"task_id": 3}}
 "delete task sss" -> {"intent": "delete_task", "confidence": 0.95, "entities": {"task_reference": "sss"}}
+"delete task go gym" -> {"intent": "delete_task", "confidence": 0.95, "entities": {"task_reference": "go gym"}}
+"complete test bot" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_reference": "test bot"}}
 "mark test the bot as completed" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_reference": "test the bot"}}
 "complete the grocery task" -> {"intent": "complete_task", "confidence": 0.95, "entities": {"task_reference": "the grocery task"}}
 "delte 3 task" -> {"intent": "delete_task", "confidence": 0.85, "entities": {"task_id": 3}}
@@ -220,17 +233,33 @@ Examples:
                     }
                 )
 
-                # Validate confidence threshold
-                if result.get("confidence", 0) < self.confidence_threshold:
+                # Validate confidence threshold and use rule-based fallback for unclear intents
+                if result.get("intent") == "unclear" or result.get("confidence", 0) < 0.5:
                     logger.warning(
-                        "IntentClassifierAgent: low confidence",
+                        "IntentClassifierAgent: Gemini returned unclear or low confidence, trying rule-based fallback",
                         extra={
                             "user_id": user_id or "unknown",
                             "correlation_id": correlation_id or "none",
-                            "confidence": result.get("confidence"),
+                            "gemini_intent": result.get("intent"),
+                            "gemini_confidence": result.get("confidence"),
                             "threshold": self.confidence_threshold
                         }
                     )
+                    # Try rule-based classifier
+                    rule_based_result = self.fallback_classifier.classify(message, user_id, correlation_id, conversation_history)
+
+                    # Use rule-based result if it's more confident than Gemini's unclear
+                    if rule_based_result.get("intent") != "unclear" or rule_based_result.get("confidence", 0) > result.get("confidence", 0):
+                        logger.info(
+                            "IntentClassifierAgent: using rule-based result instead of Gemini",
+                            extra={
+                                "user_id": user_id or "unknown",
+                                "correlation_id": correlation_id or "none",
+                                "rule_based_intent": rule_based_result.get("intent"),
+                                "rule_based_confidence": rule_based_result.get("confidence")
+                            }
+                        )
+                        return rule_based_result
 
                 return result
 

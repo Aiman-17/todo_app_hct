@@ -32,13 +32,13 @@
 
 **Purpose**: Project initialization and Phase III dependencies
 
-- [ ] T001 Install OpenAI Agents SDK (openai==1.12.0) in backend/requirements.txt
-- [ ] T002 [P] Install MCP SDK (mcp-sdk==0.3.0) in backend/requirements.txt
-- [ ] T003 [P] Install OpenAI ChatKit in frontend/package.json
-- [ ] T004 [P] Add Phase III environment variables to backend/.env.example
-- [ ] T005 [P] Create backend/src/agents/ directory structure
-- [ ] T006 [P] Create backend/src/mcp/ directory structure
-- [ ] T007 [P] Create frontend/src/components/chat/ directory structure
+- [X] T001 Install OpenAI Agents SDK (openai==1.12.0) in backend/requirements.txt (ADAPTED: Using Gemini SDK instead)
+- [X] T002 [P] Install MCP SDK (mcp-sdk==0.3.0) in backend/requirements.txt (ADAPTED: Using internal MCP wrappers)
+- [X] T003 [P] Install OpenAI ChatKit in frontend/package.json (ADAPTED: Custom chat UI built)
+- [X] T004 [P] Add Phase III environment variables to backend/.env.example
+- [X] T005 [P] Create backend/src/agents/ directory structure
+- [X] T006 [P] Create backend/src/mcp/ directory structure
+- [X] T007 [P] Create frontend/src/components/chat/ directory structure
 
 ---
 
@@ -48,17 +48,17 @@
 
 **⚠️ CRITICAL**: No chat functionality can begin until this phase is complete
 
-- [ ] T008 [DB] Create Conversation model in backend/src/models/conversation.py with SQLModel schema (include deleted_at field for soft delete)
-- [ ] T009 [DB] Create Message model in backend/src/models/conversation.py with SQLModel schema (include deleted_at field for soft delete)
-- [ ] T010 [DB] Generate Alembic migration for conversation and message tables (include deleted_at columns and partial indexes for active records)
-- [ ] T011 [DB] Apply migration and verify tables created with indexes (verify partial indexes idx_active_conversations and idx_active_messages)
-- [ ] T012 [P] [MCP] Implement add_task MCP tool in backend/src/mcp/task_tools.py
-- [ ] T013 [P] [MCP] Implement list_tasks MCP tool in backend/src/mcp/task_tools.py
-- [ ] T014 [P] [MCP] Implement complete_task MCP tool in backend/src/mcp/task_tools.py
-- [ ] T015 [P] [MCP] Implement delete_task MCP tool in backend/src/mcp/task_tools.py
-- [ ] T016 [P] [MCP] Implement update_task MCP tool in backend/src/mcp/task_tools.py
-- [ ] T017 [MCP] Setup MCP tool logging infrastructure in backend/logs/mcp_tools.log with structured logging and correlation ID support
-- [ ] T018 [MCP] Create MCP tool registry and configuration in backend/src/mcp/__init__.py
+- [X] T008 [DB] Create Conversation model in backend/src/models/conversation.py with SQLModel schema (include deleted_at field for soft delete)
+- [X] T009 [DB] Create Message model in backend/src/models/conversation.py with SQLModel schema (include deleted_at field for soft delete)
+- [X] T010 [DB] Generate Alembic migration for conversation and message tables (include deleted_at columns and partial indexes for active records)
+- [X] T011 [DB] Apply migration and verify tables created with indexes (verify partial indexes idx_active_conversations and idx_active_messages)
+- [X] T012 [P] [MCP] Implement add_task MCP tool in backend/src/mcp/task_tools.py
+- [X] T013 [P] [MCP] Implement list_tasks MCP tool in backend/src/mcp/task_tools.py
+- [X] T014 [P] [MCP] Implement complete_task MCP tool in backend/src/mcp/task_tools.py
+- [X] T015 [P] [MCP] Implement delete_task MCP tool in backend/src/mcp/task_tools.py
+- [X] T016 [P] [MCP] Implement update_task MCP tool in backend/src/mcp/task_tools.py
+- [X] T017 [MCP] Setup MCP tool logging infrastructure in backend/logs/mcp_tools.log with structured logging and correlation ID support
+- [X] T018 [MCP] Create MCP tool registry and configuration in backend/src/mcp/__init__.py
 
 **Checkpoint**: Foundation ready - agent and chat implementation can now begin in parallel
 
@@ -72,14 +72,14 @@
 
 ### Subagent Implementation
 
-- [ ] T019 [P] [AGENT] Create IntentClassifierAgent in backend/src/agents/intent_classifier.py
-- [ ] T020 [P] [AGENT] Create TaskResolutionAgent in backend/src/agents/task_resolution.py
-- [ ] T021 [P] [AGENT] Create ActionAgent in backend/src/agents/action_agent.py
-- [ ] T022 [P] [AGENT] Create ResponseFormatterAgent in backend/src/agents/response_formatter.py
-- [ ] T023 [AGENT] Implement agent orchestration in backend/src/services/chatbot_service.py
-- [ ] T024 [AGENT] Add OpenAI API client configuration in backend/src/config/openai_config.py
-- [ ] T025 [AGENT] Implement conversation context loading from database in chatbot_service.py
-- [ ] T026 [AGENT] Implement stateless conversation flow (fetch history, process, save messages)
+- [X] T019 [P] [AGENT] Create IntentClassifierAgent in backend/src/agents/intent_classifier.py
+- [X] T020 [P] [AGENT] Create TaskResolutionAgent in backend/src/agents/task_resolution.py
+- [X] T021 [P] [AGENT] Create ActionAgent in backend/src/agents/action_agent.py
+- [X] T022 [P] [AGENT] Create ResponseFormatterAgent in backend/src/agents/response_formatter.py
+- [X] T023 [AGENT] Implement agent orchestration in backend/src/services/chatbot_service.py
+- [X] T024 [AGENT] Add OpenAI API client configuration in backend/src/config/openai_config.py (ADAPTED: Using Gemini config)
+- [X] T025 [AGENT] Implement conversation context loading from database in chatbot_service.py
+- [X] T026 [AGENT] Implement stateless conversation flow (fetch history, process, save messages)
 
 **Checkpoint**: Agents can process natural language and invoke MCP tools correctly
 
@@ -93,17 +93,17 @@
 
 ### API Implementation
 
-- [ ] T027 [P] [API] Create ChatRequest schema in backend/src/models/schemas.py
-- [ ] T028 [P] [API] Create ChatResponse schema in backend/src/models/schemas.py (include correlation_id field)
-- [ ] T029 [API] Implement POST /api/chat endpoint in backend/src/routes/chat.py (generate correlation ID, return in X-Correlation-ID header)
-- [ ] T030 [API] Add JWT authentication middleware for chat endpoint
-- [ ] T031 [API] Implement conversation creation logic (new conversation if no ID provided)
-- [ ] T032 [API] Implement conversation continuation logic (load existing if ID provided)
-- [ ] T033 [API] Add request validation and error handling in chat route
-- [ ] T034 [P] [API] Implement GET /api/conversations endpoint in backend/src/routes/conversations.py
-- [ ] T035 [P] [API] Implement GET /api/conversations/{id}/messages endpoint in backend/src/routes/conversations.py
-- [ ] T036 [API] Register chat routes in backend/src/main.py FastAPI app
-- [ ] T037 [API] Add CORS configuration for chat endpoints
+- [X] T027 [P] [API] Create ChatRequest schema in backend/src/models/schemas.py
+- [X] T028 [P] [API] Create ChatResponse schema in backend/src/models/schemas.py (include correlation_id field)
+- [X] T029 [API] Implement POST /api/chat endpoint in backend/src/routes/chat.py (generate correlation ID, return in X-Correlation-ID header)
+- [X] T030 [API] Add JWT authentication middleware for chat endpoint
+- [X] T031 [API] Implement conversation creation logic (new conversation if no ID provided)
+- [X] T032 [API] Implement conversation continuation logic (load existing if ID provided)
+- [X] T033 [API] Add request validation and error handling in chat route
+- [X] T034 [P] [API] Implement GET /api/conversations endpoint in backend/src/routes/conversations.py
+- [X] T035 [P] [API] Implement GET /api/conversations/{id}/messages endpoint in backend/src/routes/conversations.py
+- [X] T036 [API] Register chat routes in backend/src/main.py FastAPI app
+- [X] T037 [API] Add CORS configuration for chat endpoints
 
 **Checkpoint**: Chat API fully functional and accessible via HTTP requests
 
@@ -117,18 +117,18 @@
 
 ### UI Implementation
 
-- [ ] T038 [P] [UI] Create ChatInterface component in frontend/src/components/chat/ChatInterface.tsx
-- [ ] T039 [P] [UI] Create MessageBubble component in frontend/src/components/chat/MessageBubble.tsx
-- [ ] T040 [P] [UI] Create InputBar component in frontend/src/components/chat/InputBar.tsx
-- [ ] T041 [UI] Implement chat state management (conversation_id, messages, loading state)
-- [ ] T042 [UI] Integrate ChatKit library in ChatInterface component
-- [ ] T043 [UI] Implement API client for POST /api/chat in frontend/src/services/chat_service.ts
-- [ ] T044 [UI] Add authentication token passing in chat API requests
-- [ ] T045 [UI] Implement message rendering with role-based styling (user vs assistant)
-- [ ] T046 [UI] Add loading indicators for agent responses
-- [ ] T047 [UI] Implement error handling and user-friendly error messages
-- [ ] T048 [UI] Create /chat route page in frontend/src/app/chat/page.tsx
-- [ ] T049 [UI] Add navigation link to chat page in main layout
+- [X] T038 [P] [UI] Create ChatInterface component in frontend/src/components/chat/ChatInterface.tsx
+- [X] T039 [P] [UI] Create MessageBubble component in frontend/src/components/chat/MessageBubble.tsx (INTEGRATED into ChatInterface)
+- [X] T040 [P] [UI] Create InputBar component in frontend/src/components/chat/InputBar.tsx (INTEGRATED into ChatInterface)
+- [X] T041 [UI] Implement chat state management (conversation_id, messages, loading state)
+- [X] T042 [UI] Integrate ChatKit library in ChatInterface component (ADAPTED: Custom UI built)
+- [X] T043 [UI] Implement API client for POST /api/chat in frontend/src/services/chat_service.ts
+- [X] T044 [UI] Add authentication token passing in chat API requests
+- [X] T045 [UI] Implement message rendering with role-based styling (user vs assistant)
+- [X] T046 [UI] Add loading indicators for agent responses
+- [X] T047 [UI] Implement error handling and user-friendly error messages
+- [X] T048 [UI] Create /chat route page in frontend/src/app/chat/page.tsx
+- [X] T049 [UI] Add navigation link to chat page in main layout
 
 **Checkpoint**: Full frontend chat interface working with backend integration
 
@@ -142,15 +142,15 @@
 
 ### Integration Tasks
 
-- [ ] T050 [P] Implement retry logic for OpenAI API failures in chatbot_service.py (1 retry with fixed 500ms delay)
-- [ ] T051 [P] Add rate limiting for chat endpoint (100 requests per hour per user)
-- [ ] T052 Add conversation history pagination (load last 50 messages)
-- [ ] T053 Implement low-confidence intent handling (< 0.7 threshold)
-- [ ] T054 Add ambiguous task reference confirmation flow
-- [ ] T055 Implement "task not found" error handling with helpful messages
+- [X] T050 [P] Implement retry logic for OpenAI API failures in chatbot_service.py (1 retry with fixed 500ms delay) (ADAPTED: Gemini retry logic)
+- [X] T051 [P] Add rate limiting for chat endpoint (100 requests per hour per user)
+- [X] T052 Add conversation history pagination (load last 50 messages)
+- [X] T053 Implement low-confidence intent handling (< 0.7 threshold)
+- [X] T054 Add ambiguous task reference confirmation flow
+- [X] T055 Implement "task not found" error handling with helpful messages
 - [ ] T056 Add MCP tool failure retry logic (1 retry with 500ms delay)
 - [ ] T057 Implement database connection error handling with retries
-- [ ] T058 [P] Add tool call metadata to chat responses for transparency
+- [X] T058 [P] Add tool call metadata to chat responses for transparency
 - [ ] T059 [P] Implement conversation deletion endpoint (soft delete with deleted_at timestamp, optional async archival job)
 - [ ] T060 Add streaming response support for real-time chat (optional enhancement)
 

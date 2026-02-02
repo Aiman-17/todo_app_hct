@@ -23,6 +23,40 @@ class RuleBasedClassifier:
         """Initialize pattern matchers."""
         self.confidence_threshold = 0.7
 
+        # Common typo mappings
+        self.typo_map = {
+            'shw': 'show',
+            'shwo': 'show',
+            'shoew': 'show',
+            'ad': 'add',
+            'creat': 'create',
+            'craete': 'create',
+            'crate': 'create',
+            'dlete': 'delete',
+            'delet': 'delete',
+            'delte': 'delete',
+            'remov': 'remove',
+            'rmove': 'remove',
+            'mkr': 'mark',
+            'mak': 'make',
+            'cmplte': 'complete',
+            'complet': 'complete',
+            'tsk': 'task',
+            'tsks': 'tasks',
+            'tak': 'task',
+            'taask': 'task',
+            'lst': 'list',
+            'vew': 'view',
+            'viw': 'view',
+            'updae': 'update',
+            'updat': 'update',
+            'teh': 'the',
+            'hte': 'the',
+            'ot': 'to',
+            'toremind': 'to remind',
+            'todo': 'to do',
+        }
+
     def classify(self, message: str, user_id: str = None, correlation_id: str = None, conversation_history: Optional[List] = None) -> Dict[str, Any]:
         """
         Classify user message using rule-based pattern matching.
@@ -41,6 +75,9 @@ class RuleBasedClassifier:
             }
         """
         message_lower = message.lower().strip()
+
+        # Normalize common typos BEFORE classification
+        message_lower = self._normalize_typos(message_lower)
 
         # Intent: list_tasks
         if self._is_list_tasks(message_lower):
@@ -66,20 +103,20 @@ class RuleBasedClassifier:
                 "entities": self._extract_task_reference(message_lower)
             }
 
+        # Intent: update_task (check BEFORE create_task to catch explicit updates)
+        if self._is_update_task(message_lower):
+            return {
+                "intent": "update_task",
+                "confidence": 0.85,
+                "entities": self._extract_update_entities(message_lower)
+            }
+
         # Intent: create_task
         if self._is_create_task(message_lower):
             return {
                 "intent": "create_task",
                 "confidence": 0.9,
                 "entities": self._extract_create_entities(message_lower)
-            }
-
-        # Intent: update_task
-        if self._is_update_task(message_lower):
-            return {
-                "intent": "update_task",
-                "confidence": 0.85,
-                "entities": self._extract_update_entities(message_lower)
             }
 
         # Intent: unclear
@@ -89,31 +126,68 @@ class RuleBasedClassifier:
             "entities": {}
         }
 
+    def _normalize_typos(self, msg: str) -> str:
+        """Normalize common typos in message."""
+        words = msg.split()
+        normalized_words = []
+
+        for word in words:
+            # Check if word is in typo map
+            if word in self.typo_map:
+                normalized_words.append(self.typo_map[word])
+            else:
+                normalized_words.append(word)
+
+        return ' '.join(normalized_words)
+
     def _is_list_tasks(self, msg: str) -> bool:
         """Check if message is requesting task list."""
-        keywords = [
-            'show', 'list', 'view', 'display', 'see',
-            'what', 'tasks', 'todo', 'todos'
-        ]
-        # Match phrases like "show tasks", "view my tasks", "what tasks"
-        return any(kw in msg for kw in ['show', 'list', 'view', 'display']) and \
-               any(kw in msg for kw in ['task', 'todo'])
+        # Enhanced patterns for task listing
+        list_keywords = ['show', 'list', 'view', 'display', 'see', 'get']
+        task_keywords = ['task', 'tasks', 'todo', 'todos']
+        question_keywords = ['what', 'whats', "what's", 'which']
+
+        # Pattern 1: "show tasks", "list my tasks", etc.
+        if any(kw in msg for kw in list_keywords) and any(kw in msg for kw in task_keywords):
+            return True
+
+        # Pattern 2: "what tasks", "what's pending", "whats my tasks"
+        if any(kw in msg for kw in question_keywords) and any(kw in msg for kw in task_keywords + ['pending', 'completed', 'done']):
+            return True
+
+        # Pattern 3: Just "pending?" or "completed?" or "my tasks?"
+        if any(kw in msg for kw in ['pending', 'my tasks', 'my todos']):
+            return True
+
+        return False
 
     def _is_create_task(self, msg: str) -> bool:
         """Check if message is creating a task."""
         # Direct patterns that indicate task creation
-        if 'remind me' in msg:
+        if 'remind me' in msg or 'remember to' in msg:
             return True
 
-        create_keywords = ['add', 'create', 'new', 'remind']
-        task_keywords = ['task', 'todo', 'reminder']
+        create_keywords = ['add', 'create', 'new', 'remind', 'make']
+        task_keywords = ['task', 'tasks', 'todo', 'reminder']
 
-        # "make new tasks for X" pattern
-        if 'make' in msg and any(kw in msg for kw in ['task', 'todo']):
+        # Pattern 1: Explicit task creation ("add task", "create todo")
+        if (any(kw in msg for kw in create_keywords) and
+            any(kw in msg for kw in task_keywords)):
             return True
 
-        return (any(kw in msg for kw in create_keywords) and
-                any(kw in msg for kw in task_keywords))
+        # Pattern 2: "I need to..." or "I should..." or "need to remember"
+        if any(phrase in msg for phrase in ['i need to', 'i should', 'need to remember', 'dont forget']):
+            return True
+
+        # Pattern 3: Standalone action (short message without question words)
+        # "buy milk", "call mom", etc. (if it's short and imperative)
+        if (len(msg.split()) <= 5 and
+            not any(kw in msg for kw in ['what', 'show', 'list', 'delete', 'remove', 'mark', 'complete']) and
+            not msg.endswith('?')):
+            # Likely an imperative command = create task
+            return True
+
+        return False
 
     def _is_complete_task(self, msg: str) -> bool:
         """Check if message is marking task complete."""
@@ -205,6 +279,10 @@ class RuleBasedClassifier:
             r'create\s+(?:a\s+|new\s+)?(?:\d+\s+)?task(?:s)?\s+(?:for\s+|to\s+)?(.+)',  # "create task", "create 5 tasks for X"
             r'make\s+(?:a\s+|new\s+|\d+\s+)?task(?:s)?\s+(?:for\s+|to\s+)?(.+)',  # "make task", "make 5 tasks for X"
             r'remind\s+me\s+to\s+(.+)',  # "remind me to X"
+            r'i\s+need\s+to\s+(?:remember\s+to\s+)?(.+)',  # "I need to X" or "I need to remember to X"
+            r'i\s+should\s+(.+)',  # "I should X"
+            r'(?:dont|don\'t)\s+forget\s+(?:to\s+)?(.+)',  # "don't forget to X"
+            r'need\s+to\s+remember\s+(?:to\s+)?(.+)',  # "need to remember to X"
             r'new\s+task(?:s)?\s+(?:for\s+)?(.+)',  # "new tasks for X"
             r'add\s+new\s+task\s*(?::\s*)?(.+)',  # "add new task: X" or "add new task X"
             r'(?:add|create)\s+(?:task\s+)?(.+)',  # Fallback: "add X", "create X" (very flexible)
@@ -218,6 +296,12 @@ class RuleBasedClassifier:
                 # Skip if extracted text is too short or just a number
                 if len(title_text) > 2 and not title_text.isdigit():
                     break
+
+        # If no pattern matched but message looks like imperative (short, no keywords)
+        # Use the entire message as title
+        if not title_text and len(msg.split()) <= 5:
+            if not any(kw in msg for kw in ['what', 'show', 'list', 'delete', 'remove', 'mark']):
+                title_text = msg
 
         # Clean up title (remove date, tag, priority keywords)
         if title_text:
@@ -345,7 +429,7 @@ class RuleBasedClassifier:
         entities = {}
 
         # Extract task reference from the message
-        # Patterns: "update moving phase 4", "update task 5", "update id 20"
+        # Patterns: "update rearching to resarching", "update task 5 to new title", "update id 20 to fix typo"
 
         # First, try to extract task ID
         patterns = [

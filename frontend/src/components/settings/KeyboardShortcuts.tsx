@@ -69,7 +69,7 @@ export function KeyboardShortcuts() {
 
       <div className="p-4 bg-seal-brown/5 rounded-lg border border-seal-brown/10">
         <p className="text-sm text-seal-brown/70">
-          <strong>Tip:</strong> These shortcuts work from anywhere in the app unless you're typing in an input field.
+          <strong>Tip:</strong> These shortcuts work from anywhere in the app unless you&apos;re typing in an input field.
         </p>
       </div>
     </div>

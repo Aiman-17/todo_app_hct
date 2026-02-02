@@ -199,10 +199,10 @@ export function TaskForm({ trigger, open: controlledOpen, onOpenChange, task }: 
       }
 
       setIsOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: isEditMode ? "Failed to update task" : "Failed to create task",
-        description: error.message || "An error occurred",
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     } finally {

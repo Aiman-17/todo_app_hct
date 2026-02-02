@@ -19,7 +19,6 @@ export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch all tasks
   useEffect(() => {
@@ -29,8 +28,6 @@ export default function CalendarPage() {
         setTasks(data);
       } catch (error) {
         console.error("Failed to load tasks:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
 

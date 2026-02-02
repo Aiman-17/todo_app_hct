@@ -72,10 +72,10 @@ export function TaskList() {
         : data;
 
       setTasks(filteredData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to load tasks",
-        description: error.message || "An error occurred",
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     } finally {
@@ -106,15 +106,6 @@ export function TaskList() {
   }, [fetchTasks]);
 
   /**
-   * Handle task deletion by removing it from local state.
-   *
-   * @param taskId - ID of the task that was deleted
-   */
-  const handleTaskDeleted = (taskId: number) => {
-    setTasks((prev) => prev.filter((task) => task.id !== taskId));
-  };
-
-  /**
    * Handle task toggle by updating local state.
    */
   const handleTaskToggle = async (taskId: number) => {
@@ -133,10 +124,10 @@ export function TaskList() {
 
       // Announce to screen readers
       announce(task.completed ? "Task marked as incomplete" : "Task marked as complete");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to update task",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }
@@ -184,10 +175,10 @@ export function TaskList() {
                     title: "Task restored",
                     description: "Task has been successfully restored",
                   });
-                } catch (error: any) {
+                } catch (error: unknown) {
                   toast({
                     title: "Failed to restore task",
-                    description: error.message,
+                    description: error instanceof Error ? error.message : "An error occurred",
                     variant: "destructive",
                   });
                 }
@@ -200,10 +191,10 @@ export function TaskList() {
         ),
         duration: 5000, // 5 second timeout
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to delete task",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }

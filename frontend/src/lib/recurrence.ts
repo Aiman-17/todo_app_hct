@@ -93,7 +93,7 @@ export function formatRecurrenceRule(rule: RecurrenceRule): string {
  * @param recurrenceRule - Recurrence rule object or null
  * @returns True if task is recurring, false otherwise
  */
-export function isRecurring(recurrenceRule: Record<string, any> | null): boolean {
+export function isRecurring(recurrenceRule: RecurrenceRule | null): boolean {
   return recurrenceRule !== null && recurrenceRule.frequency !== undefined;
 }
 
@@ -103,7 +103,7 @@ export function isRecurring(recurrenceRule: Record<string, any> | null): boolean
  * @param rule - Recurrence rule to validate
  * @returns True if valid, false otherwise
  */
-export function isValidRecurrenceRule(rule: any): rule is RecurrenceRule {
+export function isValidRecurrenceRule(rule: unknown): rule is RecurrenceRule {
   if (!rule || typeof rule !== "object") return false;
 
   const validFrequencies: RecurrenceFrequency[] = ["daily", "weekly", "monthly", "yearly"];

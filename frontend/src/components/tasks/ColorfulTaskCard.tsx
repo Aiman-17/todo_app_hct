@@ -153,7 +153,7 @@ export const ColorfulTaskCard = memo(function ColorfulTaskCard({
             <div className="flex items-center gap-1 mt-2">
               <Repeat className="w-3 h-3 opacity-70" style={{ color: colors.text }} aria-hidden="true" />
               <span className="text-xs font-medium" style={{ color: colors.text }}>
-                {formatRecurrenceRule(task.recurrence_rule as any)}
+                {formatRecurrenceRule(task.recurrence_rule)}
               </span>
             </div>
           )}

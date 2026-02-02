@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils'
 import { sendChatMessage, ChatAPIError } from '@/lib/api/chat'
 import { useToast } from '@/components/ui/use-toast'
 import type { ChatMessage } from '@/types/chat'
+import { VoiceButton } from '@/components/chat/VoiceButton'
+import { LanguageToggle } from '@/components/chat/LanguageToggle'
 
 interface ChatInterfaceProps {
   onTaskUpdate: () => void // Callback when task is created/updated/deleted
@@ -28,6 +30,7 @@ export function ChatInterface({ onTaskUpdate }: ChatInterfaceProps) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
+  const [language, setLanguage] = useState<'en' | 'ur'>('en')
   const scrollRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
 
@@ -113,7 +116,7 @@ export function ChatInterface({ onTaskUpdate }: ChatInterfaceProps) {
       const token = getCookie('access_token')
       console.log('🔑 Auth token exists:', !!token, token ? `(${token.substring(0, 20)}...)` : '')
 
-      const response = await sendChatMessage(input, conversationId)
+      const response = await sendChatMessage(input, conversationId, language)
 
       console.log('✅ Response received:', response)
 
@@ -193,6 +196,62 @@ export function ChatInterface({ onTaskUpdate }: ChatInterfaceProps) {
     }
   }
 
+  const handleVoiceTranscript = (transcript: string) => {
+    // Set the transcript as input
+    setInput(transcript)
+
+    // Auto-send the message (optional - can be disabled for review before send)
+    setTimeout(() => {
+      setInput(transcript)
+      // Trigger send automatically after setting input
+      const sendMessage = async () => {
+        if (!transcript.trim() || loading) return
+
+        const userMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'user',
+          content: transcript,
+          timestamp: new Date()
+        }
+
+        setMessages(prev => [...prev, userMessage])
+        setInput('')
+        setLoading(true)
+
+        try {
+          const response = await sendChatMessage(transcript, conversationId, language)
+
+          if (!conversationId) {
+            setConversationId(response.conversation_id)
+          }
+
+          const assistantMessage: ChatMessage = {
+            id: Date.now().toString() + '-assistant',
+            role: 'assistant',
+            content: response.response,
+            timestamp: new Date()
+          }
+
+          setMessages(prev => [...prev, assistantMessage])
+
+          if (['create_task', 'update_task', 'delete_task', 'complete_task'].includes(response.intent)) {
+            onTaskUpdate()
+          }
+        } catch (error) {
+          console.error('Voice message error:', error)
+          toast({
+            title: 'Error',
+            description: 'Failed to send voice message. Please try again.',
+            variant: 'destructive'
+          })
+        } finally {
+          setLoading(false)
+        }
+      }
+      sendMessage()
+    }, 100)
+  }
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-rose-white to-rose-white/50">
       {/* Messages */}
@@ -212,6 +271,13 @@ export function ChatInterface({ onTaskUpdate }: ChatInterfaceProps) {
         </div>
       </ScrollArea>
 
+      {/* Language Toggle */}
+      <div className="border-t border-seal-brown/10 px-4 pt-3 bg-white/50 backdrop-blur-sm">
+        <div className="max-w-3xl mx-auto flex justify-end">
+          <LanguageToggle language={language} onLanguageChange={setLanguage} />
+        </div>
+      </div>
+
       {/* Input */}
       <div className="border-t border-seal-brown/10 p-4 bg-white/50 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto flex gap-2">
@@ -219,18 +285,25 @@ export function ChatInterface({ onTaskUpdate }: ChatInterfaceProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type your message... (e.g., 'show my tasks')"
+            placeholder="Type or speak your message... (e.g., 'show my tasks')"
             className="min-h-[60px] max-h-[200px] resize-none bg-white border-seal-brown/20 focus:border-seal-brown/40 text-seal-brown placeholder:text-seal-brown/40"
             disabled={loading}
           />
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || loading}
-            size="icon"
-            className="h-[60px] w-[60px] bg-seal-brown hover:bg-seal-brown/90 text-rose-white shadow-lg"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+          <div className="flex flex-col gap-2">
+            <VoiceButton
+              onTranscript={handleVoiceTranscript}
+              disabled={loading}
+              className="flex-shrink-0"
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || loading}
+              size="icon"
+              className="h-[60px] w-[60px] bg-seal-brown hover:bg-seal-brown/90 text-rose-white shadow-lg flex-shrink-0"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

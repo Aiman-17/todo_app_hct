@@ -11,7 +11,7 @@ export class ChatAPIError extends Error {
   constructor(
     message: string,
     public statusCode: number,
-    public details?: any
+    public details?: unknown
   ) {
     super(message)
     this.name = 'ChatAPIError'
@@ -23,11 +23,13 @@ export class ChatAPIError extends Error {
  */
 export async function sendChatMessage(
   message: string,
-  conversationId?: string
+  conversationId?: string,
+  language: 'en' | 'ur' = 'en'
 ): Promise<ChatResponse> {
   const requestBody: ChatRequest = {
     message,
-    conversation_id: conversationId
+    conversation_id: conversationId,
+    language
   }
 
   try {

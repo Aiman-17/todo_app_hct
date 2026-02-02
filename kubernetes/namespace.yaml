@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-taskmaster
+  labels:
+    app: ai-taskmaster
+    environment: production
+    managed-by: kubectl

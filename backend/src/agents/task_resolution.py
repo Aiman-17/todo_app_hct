@@ -88,7 +88,9 @@ class TaskResolutionAgent:
 
             # Case 2: Task reference (fuzzy text matching)
             if "task_reference" in entities and entities["task_reference"]:
+                # Normalize reference: strip, lowercase, remove extra spaces
                 reference = entities["task_reference"].lower().strip()
+                reference = ' '.join(reference.split())  # Remove multiple spaces
 
                 # Get all user's tasks via MCP tool (READ-ONLY)
                 tasks_result = list_tasks(
@@ -112,17 +114,34 @@ class TaskResolutionAgent:
 
                 tasks = tasks_result.get("tasks", [])
 
-                # Fuzzy match task titles
+                # Fuzzy match task titles using word-overlap algorithm
                 matches = []
+                reference_words = set(reference.split())
+
                 for task in tasks:
-                    title_lower = task["title"].lower()
-                    # Simple substring matching (can be enhanced with fuzzy matching library)
-                    if reference in title_lower or title_lower in reference:
+                    title_lower = task["title"].lower().strip()
+                    title_lower = ' '.join(title_lower.split())  # Normalize spaces
+                    title_words = set(title_lower.split())
+
+                    # Match if:
+                    # 1. Exact substring match (original behavior)
+                    # 2. All reference words exist in title (word-overlap)
+                    # 3. Title is substring of reference (handles "the gym" matching "go to gym")
+                    exact_match = reference in title_lower or title_lower in reference
+                    word_overlap = reference_words.issubset(title_words)
+
+                    if exact_match or word_overlap:
+                        # Calculate match score for ranking
+                        overlap_ratio = len(reference_words & title_words) / max(len(reference_words), 1)
                         matches.append({
                             "id": task["id"],
                             "title": task["title"],
-                            "completed": task["completed"]
+                            "completed": task["completed"],
+                            "score": overlap_ratio
                         })
+
+                # Sort matches by score (best match first)
+                matches.sort(key=lambda x: x["score"], reverse=True)
 
                 logger.info(
                     "TaskResolutionAgent: fuzzy match",

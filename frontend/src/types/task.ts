@@ -4,6 +4,8 @@
  * Mirrors backend Pydantic schemas (TaskCreate, TaskUpdate, TaskResponse).
  */
 
+import type { RecurrenceRule } from "@/lib/recurrence";
+
 /**
  * Task data (response from backend).
  */
@@ -15,7 +17,7 @@ export interface Task {
   priority: "high" | "medium" | "low";
   due_date: string | null; // ISO 8601 datetime or null
   tags: string[] | null;
-  recurrence_rule: Record<string, any> | null;
+  recurrence_rule: RecurrenceRule | null;
   created_at: string; // ISO 8601 datetime
   updated_at: string; // ISO 8601 datetime
   deleted_at: string | null; // ISO 8601 datetime or null (soft delete)
@@ -30,7 +32,7 @@ export interface TaskCreate {
   priority?: "high" | "medium" | "low";
   due_date?: string | null;
   tags?: string[] | null;
-  recurrence_rule?: Record<string, any> | null;
+  recurrence_rule?: RecurrenceRule | null;
 }
 
 /**
@@ -42,5 +44,5 @@ export interface TaskUpdate {
   priority?: "high" | "medium" | "low";
   due_date?: string | null;
   tags?: string[] | null;
-  recurrence_rule?: Record<string, any> | null;
+  recurrence_rule?: RecurrenceRule | null;
 }

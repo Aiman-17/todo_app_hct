@@ -14,6 +14,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   message: string
   conversation_id?: string
+  language?: 'en' | 'ur'
 }
 
 export interface ChatResponse {
