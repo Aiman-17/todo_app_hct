@@ -38,8 +38,15 @@ async def lifespan(app: FastAPI):
     logger.info(f"🌐 CORS Origins: {', '.join(settings.CORS_ORIGINS)}")
 
     # Create database tables (safe to call multiple times)
-    create_db_and_tables()
-    logger.info("✅ Database tables initialized")
+    # For serverless environments, table creation should be done via migrations
+    # but we'll attempt it here with error handling for compatibility
+    try:
+        create_db_and_tables()
+        logger.info("✅ Database tables initialized")
+    except Exception as e:
+        # In serverless environments, tables should already exist
+        # Log warning but don't fail startup
+        logger.warning(f"⚠️ Could not create tables (might already exist): {e}")
 
     yield
 
