@@ -49,9 +49,9 @@ def setup_mcp_logging():
         log_dir = Path(__file__).parent.parent.parent / "logs"
 
     # Create logs directory if it doesn't exist
+    log_file = log_dir / "mcp_tools.log"
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
-        log_file = log_dir / "mcp_tools.log"
 
         # Create rotating file handler (10MB max, keep 5 backups)
         file_handler = logging.handlers.RotatingFileHandler(
@@ -60,9 +60,10 @@ def setup_mcp_logging():
             backupCount=5,
             encoding="utf-8"
         )
-    except (OSError, PermissionError):
+    except (OSError, PermissionError) as e:
         # If file logging fails (e.g., truly read-only environment), skip it
         file_handler = None
+        log_file = None  # Set to None so we know it failed
 
     # Create console handler for development
     console_handler = logging.StreamHandler()
@@ -91,7 +92,7 @@ def setup_mcp_logging():
             "user_id": "system",
             "correlation_id": "init",
             "log_level": settings.MCP_TOOLS_LOG_LEVEL,
-            "log_file": str(log_file)
+            "log_file": str(log_file) if log_file else "console-only"
         }
     )
 
