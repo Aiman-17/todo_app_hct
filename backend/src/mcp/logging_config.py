@@ -39,19 +39,30 @@ def setup_mcp_logging():
     if logger.hasHandlers():
         logger.handlers.clear()
 
+    # Detect serverless environment (Vercel sets VERCEL env var)
+    is_serverless = os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")
+
+    # Use /tmp for serverless environments (read-only filesystem otherwise)
+    if is_serverless:
+        log_dir = Path("/tmp/logs")
+    else:
+        log_dir = Path(__file__).parent.parent.parent / "logs"
+
     # Create logs directory if it doesn't exist
-    log_dir = Path(__file__).parent.parent.parent / "logs"
-    log_dir.mkdir(exist_ok=True)
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "mcp_tools.log"
 
-    log_file = log_dir / "mcp_tools.log"
-
-    # Create rotating file handler (10MB max, keep 5 backups)
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_file,
-        maxBytes=10 * 1024 * 1024,  # 10MB
-        backupCount=5,
-        encoding="utf-8"
-    )
+        # Create rotating file handler (10MB max, keep 5 backups)
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_file,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
+            encoding="utf-8"
+        )
+    except (OSError, PermissionError):
+        # If file logging fails (e.g., truly read-only environment), skip it
+        file_handler = None
 
     # Create console handler for development
     console_handler = logging.StreamHandler()
@@ -62,11 +73,13 @@ def setup_mcp_logging():
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    file_handler.setFormatter(formatter)
+    if file_handler:
+        file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
 
     # Add handlers to logger
-    logger.addHandler(file_handler)
+    if file_handler:
+        logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
     # Prevent propagation to root logger (avoid duplicate logs)
