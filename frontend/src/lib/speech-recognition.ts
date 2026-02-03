@@ -5,6 +5,70 @@
  * with proper error handling and browser compatibility checks.
  */
 
+// Web Speech API Type Definitions
+interface SpeechRecognitionEventMap {
+  audiostart: Event;
+  audioend: Event;
+  end: Event;
+  error: SpeechRecognitionErrorEvent;
+  nomatch: SpeechRecognitionEvent;
+  result: SpeechRecognitionEvent;
+  soundstart: Event;
+  soundend: Event;
+  speechstart: Event;
+  speechend: Event;
+  start: Event;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionInterface {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  onstart: (() => void) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionInterface;
+    webkitSpeechRecognition?: new () => SpeechRecognitionInterface;
+  }
+}
+
 interface SpeechRecognitionConfig {
   language?: string;
   continuous?: boolean;
@@ -12,16 +76,16 @@ interface SpeechRecognitionConfig {
   maxAlternatives?: number;
 }
 
-interface SpeechRecognitionResult {
+interface RecognitionResult {
   transcript: string;
   confidence: number;
   isFinal: boolean;
 }
 
 export class SpeechRecognitionService {
-  private recognition: any;
+  private recognition: SpeechRecognitionInterface | null = null;
   private isListening: boolean = false;
-  private onResultCallback?: (result: SpeechRecognitionResult) => void;
+  private onResultCallback?: (result: RecognitionResult) => void;
   private onErrorCallback?: (error: string) => void;
   private onEndCallback?: () => void;
 
@@ -38,17 +102,19 @@ export class SpeechRecognitionService {
     }
 
     // Initialize speech recognition
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    this.recognition = new SpeechRecognition();
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      this.recognition = new SpeechRecognition();
 
-    // Configure recognition
-    this.recognition.lang = config.language || 'en-US';
-    this.recognition.continuous = config.continuous || false;
-    this.recognition.interimResults = config.interimResults || true;
-    this.recognition.maxAlternatives = config.maxAlternatives || 1;
+      // Configure recognition
+      this.recognition.lang = config.language || 'en-US';
+      this.recognition.continuous = config.continuous || false;
+      this.recognition.interimResults = config.interimResults || true;
+      this.recognition.maxAlternatives = config.maxAlternatives || 1;
 
-    // Setup event handlers
-    this.setupEventHandlers();
+      // Setup event handlers
+      this.setupEventHandlers();
+    }
   }
 
   /**
@@ -59,14 +125,14 @@ export class SpeechRecognitionService {
     if (typeof window === 'undefined') {
       return false;
     }
-    return !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition;
+    return !!window.SpeechRecognition || !!window.webkitSpeechRecognition;
   }
 
   /**
    * Start listening for speech input
    */
   start(): Promise<string> {
-    if (!this.isSupported()) {
+    if (!this.isSupported() || !this.recognition) {
       return Promise.reject(new Error('Speech recognition not supported'));
     }
 
@@ -97,8 +163,10 @@ export class SpeechRecognitionService {
       };
 
       try {
-        this.recognition.start();
-        this.isListening = true;
+        if (this.recognition) {
+          this.recognition.start();
+          this.isListening = true;
+        }
       } catch (error) {
         reject(error);
       }
@@ -139,7 +207,7 @@ export class SpeechRecognitionService {
     if (!this.recognition) return;
 
     // Handle recognition results
-    this.recognition.onresult = (event: any) => {
+    this.recognition.onresult = (event: SpeechRecognitionEvent) => {
       const results = event.results;
       const lastResult = results[results.length - 1];
       const transcript = lastResult[0].transcript;
@@ -152,7 +220,7 @@ export class SpeechRecognitionService {
     };
 
     // Handle errors
-    this.recognition.onerror = (event: any) => {
+    this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       let errorMessage = 'Speech recognition error';
 
       switch (event.error) {
@@ -218,7 +286,7 @@ export class SpeechRecognitionService {
     try {
       const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
       return result.state;
-    } catch (error) {
+    } catch {
       // Permissions API not supported, assume prompt state
       // Speech Recognition will handle permission request
       return 'prompt';

@@ -119,8 +119,8 @@ export function VoiceButton({
             <div className="bg-gray-50 rounded-md p-4 mb-4">
               <p className="text-sm text-gray-700 font-medium mb-2">How to enable:</p>
               <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-                <li>Click the microphone icon in your browser's address bar</li>
-                <li>Select "Allow" for microphone access</li>
+                <li>Click the microphone icon in your browser&apos;s address bar</li>
+                <li>Select &quot;Allow&quot; for microphone access</li>
                 <li>Try voice input again</li>
               </ol>
             </div>
@@ -210,7 +210,7 @@ export function VoiceInputIndicator({ transcript, isListening }: VoiceInputIndic
           </span>
         </div>
         {transcript && (
-          <p className="text-sm text-gray-700 italic">"{transcript}"</p>
+          <p className="text-sm text-gray-700 italic">&quot;{transcript}&quot;</p>
         )}
       </div>
     </div>

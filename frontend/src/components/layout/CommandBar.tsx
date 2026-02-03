@@ -23,7 +23,10 @@ export interface CommandBarRef {
   toggleSort: () => void;
 }
 
-export const CommandBar = forwardRef<CommandBarRef, Record<string, never>>((props, ref) => {
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface CommandBarProps {}
+
+export const CommandBar = forwardRef<CommandBarRef, CommandBarProps>((props, ref) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const {
     filters,

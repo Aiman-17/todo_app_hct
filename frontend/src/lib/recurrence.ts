@@ -107,10 +107,12 @@ export function isValidRecurrenceRule(rule: unknown): rule is RecurrenceRule {
   if (!rule || typeof rule !== "object") return false;
 
   const validFrequencies: RecurrenceFrequency[] = ["daily", "weekly", "monthly", "yearly"];
+  const r = rule as Record<string, unknown>;
 
   return (
-    validFrequencies.includes(rule.frequency) &&
-    typeof rule.interval === "number" &&
-    rule.interval >= 1
+    typeof r.frequency === "string" &&
+    validFrequencies.includes(r.frequency as RecurrenceFrequency) &&
+    typeof r.interval === "number" &&
+    r.interval >= 1
   );
 }

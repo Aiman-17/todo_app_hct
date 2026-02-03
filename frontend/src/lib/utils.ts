@@ -20,8 +20,13 @@ export function handleApiError(error: unknown): string {
     return "Unable to connect to server. Please check your connection and try again.";
   }
 
+  // Type guard for error objects
+  const isErrorWithDetail = (err: unknown): err is { detail: unknown } => {
+    return typeof err === 'object' && err !== null && 'detail' in err;
+  };
+
   // Handle API errors with detail field (FastAPI format)
-  if (error?.detail) {
+  if (isErrorWithDetail(error)) {
     if (typeof error.detail === 'string') {
       return error.detail;
     }
@@ -31,13 +36,23 @@ export function handleApiError(error: unknown): string {
     }
   }
 
+  // Type guard for error with message
+  const isErrorWithMessage = (err: unknown): err is { message: string } => {
+    return typeof err === 'object' && err !== null && 'message' in err && typeof (err as { message: unknown }).message === 'string';
+  };
+
   // Handle errors with message field
-  if (error?.message) {
+  if (isErrorWithMessage(error)) {
     return error.message;
   }
 
+  // Type guard for error with status
+  const isErrorWithStatus = (err: unknown): err is { status: number } => {
+    return typeof err === 'object' && err !== null && 'status' in err && typeof (err as { status: unknown }).status === 'number';
+  };
+
   // Handle HTTP status codes
-  if (error?.status) {
+  if (isErrorWithStatus(error)) {
     switch (error.status) {
       case 400:
         return "Invalid request. Please check your input and try again.";

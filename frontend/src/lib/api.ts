@@ -34,6 +34,15 @@ function deleteCookie(name: string): void {
 }
 
 /**
+ * Error response structure from the backend API.
+ */
+interface ErrorResponse {
+  detail?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Custom error class for API request failures.
  */
 export class APIError extends Error {
@@ -110,7 +119,8 @@ export async function apiRequest<T>(
 
     // Handle JWT expiration (401) specifically
     if (response.status === 401 && retryCount === 0) {
-      const errorMessage = data?.detail || data?.message || '';
+      const errorData = data as ErrorResponse | null;
+      const errorMessage = errorData?.detail || errorData?.message || '';
 
       // Check if it's a token expiration error (not login/refresh endpoint)
       if (!endpoint.includes('/login') && !endpoint.includes('/refresh') &&
@@ -148,8 +158,9 @@ export async function apiRequest<T>(
 
     // Handle other errors
     if (!response.ok) {
+      const errorData = data as ErrorResponse | null;
       throw new APIError(
-        data?.detail || data?.message || `Request failed with status ${response.status}`,
+        errorData?.detail || errorData?.message || `Request failed with status ${response.status}`,
         response.status,
         data
       );

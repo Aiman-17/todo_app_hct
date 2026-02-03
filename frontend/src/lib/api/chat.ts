@@ -45,10 +45,11 @@ export async function sendChatMessage(
     if (error instanceof APIError) {
       // Handle rate limiting (429)
       if (error.status === 429) {
+        const response = error.response as { detail?: { message?: string } } | undefined;
         throw new ChatAPIError(
-          error.response?.detail?.message || 'Rate limit exceeded. Please try again later.',
+          response?.detail?.message || 'Rate limit exceeded. Please try again later.',
           429,
-          error.response?.detail
+          response?.detail
         )
       }
 
