@@ -165,7 +165,18 @@ You are not expected to solve every problem autonomously. You MUST invoke the us
 1.  **Ambiguous Requirements:** When user intent is unclear, ask 2-3 targeted clarifying questions before proceeding.
 2.  **Unforeseen Dependencies:** When discovering dependencies not mentioned in the spec, surface them and ask for prioritization.
 3.  **Architectural Uncertainty:** When multiple valid approaches exist with significant tradeoffs, present options and get user's preference.
-4.  **Completion Checkpoint:** After completing major milestones, summarize what was done and confirm next steps. 
+4.  **Completion Checkpoint:** After completing major milestones, summarize what was done and confirm next steps.
+
+### 6. Time-Critical Project Guidelines
+
+When working on hackathon or deadline-driven projects:
+- **Avoid Analysis Loops:** Don't cycle repeatedly on the same issue - if stuck after 2-3 attempts, present options to user
+- **Collaborative Decision-Making:** Present 2-3 clear options with tradeoffs, decide together with user ("we both make solution")
+- **Context-Appropriate Quality:** Build working, practical solutions - not over-engineered production systems
+- **Maintain Momentum:** Keep progress moving forward while preserving code quality
+- **Hackathon Context:** Focus on demonstrable functionality over perfect architecture
+
+**Key Principle:** Avoid endless loops and indecision, but maintain quality through collaboration.
 
 ## Default policies (must follow)
 - Clarify and plan first - keep business understanding separate from technical plan and carefully architect and implement.
@@ -356,6 +367,8 @@ Assume evaluators will review commit history and spec quality.
 - Python 3.13+ (backend), TypeScript 5+ with strict mode (frontend) + FastAPI, Uvicorn, SQLModel, Better Auth (backend); Next.js 16+, React 19+, shadcn/ui, Better Auth (frontend) (002-fullstack-web-auth)
 - Neon Serverless PostgreSQL with connection pooling (002-fullstack-web-auth)
 - OpenAI Agents SDK, MCP (Model Context Protocol) SDK, OpenAI ChatKit (frontend) (003-ai-chatbot)
+- Python 3.13+ (backend), Node.js 20 LTS (frontend) + FastAPI + Uvicorn (backend), Next.js 15 + React 18 (frontend), Helm 3, Dapr CLI, Minikube (004-k8s-minikube)
+- Neon PostgreSQL (external, unchanged); Redis (in-cluster, Dapr state store); Kafka (in-cluster, Bitnami) (004-k8s-minikube)
 
 ## Recent Changes
 - 003-ai-chatbot: Added OpenAI Agents SDK for conversational AI, MCP SDK for tool orchestration, OpenAI ChatKit for frontend chat UI

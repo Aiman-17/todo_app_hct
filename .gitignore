@@ -74,7 +74,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -113,6 +112,11 @@ secrets.json
 *.crt
 *.p12
 *.pfx
+
+# Kubernetes / Helm secrets
+deploy/values.secret.yaml
+*.secret.yaml
+kubeconfig*
 
 # Backup files
 *.backup
