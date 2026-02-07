@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.statestore.name }}
+  namespace: ai-taskmaster
+  labels:
+    app: todo-app
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: {{ .Values.dapr.statestore.redis | quote }}
+    - name: redisPassword
+      value: ""

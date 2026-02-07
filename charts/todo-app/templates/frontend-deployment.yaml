@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-frontend
+  namespace: ai-taskmaster
+  labels:
+    app: todo-app
+    tier: frontend
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: todo-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: todo-app
+        tier: frontend
+      annotations:
+        dapr.io/enabled: "false"
+    spec:
+      containers:
+        - name: frontend
+          image: {{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.frontend.port }}
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: todo-app-config
+                  key: NEXT_PUBLIC_API_URL
+          startupProbe:
+            httpGet:
+              path: {{ .Values.frontend.healthProbe.path }}
+              port: {{ .Values.frontend.port }}
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.frontend.healthProbe.path }}
+              port: {{ .Values.frontend.port }}
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.frontend.healthProbe.path }}
+              port: {{ .Values.frontend.port }}
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: {{ .Values.frontend.resources.requests.memory | quote }}
+              cpu: {{ .Values.frontend.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.frontend.resources.limits.memory | quote }}
+              cpu: {{ .Values.frontend.resources.limits.cpu | quote }}

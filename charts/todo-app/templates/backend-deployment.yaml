@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-backend
+  namespace: ai-taskmaster
+  labels:
+    app: todo-app
+    tier: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: todo-app
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: todo-app
+        tier: backend
+      annotations:
+        dapr.io/enabled: "false"
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command:
+            - python
+            - -u
+            - -m
+            - uvicorn
+            - src.main:app
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "{{ .Values.backend.port }}"
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: todo-app-secrets
+                  key: DATABASE_URL
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: todo-app-secrets
+                  key: BETTER_AUTH_SECRET
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: todo-app-secrets
+                  key: GEMINI_API_KEY
+            - name: CORS_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: todo-app-config
+                  key: CORS_ORIGINS
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: todo-app-config
+                  key: ENVIRONMENT
+          startupProbe:
+            httpGet:
+              path: {{ .Values.backend.healthProbe.path }}
+              port: {{ .Values.backend.port }}
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.healthProbe.path }}
+              port: {{ .Values.backend.port }}
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.healthProbe.path }}
+              port: {{ .Values.backend.port }}
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: {{ .Values.backend.resources.requests.memory | quote }}
+              cpu: {{ .Values.backend.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.backend.resources.limits.memory | quote }}
+              cpu: {{ .Values.backend.resources.limits.cpu | quote }}

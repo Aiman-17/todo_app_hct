@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.pubsub.name }}
+  namespace: ai-taskmaster
+  labels:
+    app: todo-app
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+    - name: brokerURL
+      value: {{ .Values.dapr.pubsub.broker | quote }}
+    - name: consumerGroup
+      value: "todo-consumers"

@@ -1,0 +1,16 @@
+apiVersion: v2
+name: todo-app
+description: Phase 4 — Todo App full-stack deployment (backend, frontend, Dapr, Kafka, Redis)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: kafka
+    version: 30.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: kafka.enabled
+  - name: redis
+    version: 20.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled

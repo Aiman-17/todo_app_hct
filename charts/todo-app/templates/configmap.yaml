@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-app-config
+  namespace: ai-taskmaster
+  labels:
+    app: todo-app
+data:
+  CORS_ORIGINS: {{ .Values.backend.env.CORS_ORIGINS | quote }}
+  ENVIRONMENT: {{ .Values.backend.env.ENVIRONMENT | quote }}
+  NEXT_PUBLIC_API_URL: {{ .Values.frontend.env.NEXT_PUBLIC_API_URL | quote }}

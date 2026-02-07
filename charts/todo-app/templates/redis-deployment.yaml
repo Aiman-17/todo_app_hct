@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: ai-taskmaster
+  labels:
+    app: todo-app
+    tier: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-app
+      tier: redis
+  template:
+    metadata:
+      labels:
+        app: todo-app
+        tier: redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.standaloneRedis.image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ .Values.standaloneRedis.port }}
+              name: redis
+          resources:
+            requests:
+              memory: {{ .Values.standaloneRedis.resources.requests.memory | quote }}
+              cpu: {{ .Values.standaloneRedis.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.standaloneRedis.resources.limits.memory | quote }}
+              cpu: {{ .Values.standaloneRedis.resources.limits.cpu | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: ai-taskmaster
+  labels:
+    app: todo-app
+    tier: redis
+spec:
+  selector:
+    app: todo-app
+    tier: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
