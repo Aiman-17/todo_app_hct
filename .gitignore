@@ -121,3 +121,13 @@ kubeconfig*
 # Backup files
 *.backup
 *.bkp
+
+#Phase4 temporary files
+dapr.zip
+helm.zip
+helm-extract/  
+*.exe
+start-minikube.ps1
+install-tools.ps1
+wsl-setup.sh
+
